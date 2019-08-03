@@ -34,8 +34,8 @@ void initBoard(game * gptr, int rows, int cols) {
 	gptr->flag = malloc(sideLength * sizeof(int *));
 
 	for (i=0; i<sideLength; i++) {
-		gptr->user = malloc(sideLength * sizeof(int));
-		gptr->flag = malloc(sideLength * sizeof(int));
+		gptr->user[i] = malloc(sideLength * sizeof(int));
+		gptr->flag[i] = malloc(sideLength * sizeof(int));
 	} /* TODO currently calloc returns null pointer for columns. Check why */
 
 	/* compound statement check for memory allocation errors */
