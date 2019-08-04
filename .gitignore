@@ -1,0 +1,2 @@
+# currently ignore main.c, as it is used for running tests
+main.c
