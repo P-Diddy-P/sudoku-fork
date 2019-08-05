@@ -75,10 +75,10 @@ void checkBlockForErrors(game *gptr, int **errorBoard, int blockId) {
 
 	for (ci=si; ci<si+gptr->rows; ci++) { /* TODO extremely convoluted iteration, consider revising */
 		for (cj=sj; cj<sj+gptr->cols; cj++) {
-			printf("[[testing cell[%d][%d]=%d]]\n\n", ci, cj, gptr->user[ci][cj]);
+			/*printf("[[testing cell[%d][%d]=%d]]\n\n", ci, cj, gptr->user[ci][cj]);*/
 
 			if (gptr->user[ci][cj] == 0) {
-				printf("Value is 0, skipping comparisons.\n\n");
+				/*printf("Value is 0, skipping comparisons.\n\n");*/
 				continue; /* skip 0 values for performance, those don't cause errors */
 			}
 
@@ -86,16 +86,16 @@ void checkBlockForErrors(game *gptr, int **errorBoard, int blockId) {
 				rj = (ri == ci) ? (cj + 1) % gptr->cols : sj;
 
 				for (/* defined above */; rj<sj+gptr->cols; rj++) {
-					printf("    comparing [%d][%d]=(%d) ??? [%d][%d]=(%d)", ci, cj, gptr->user[ci][cj], ri, rj, gptr->user[ri][rj]);
+					/*printf("    comparing [%d][%d]=(%d) ??? [%d][%d]=(%d)", ci, cj, gptr->user[ci][cj], ri, rj, gptr->user[ri][rj]);*/
 					if (gptr->user[ci][cj] == gptr->user[ri][rj]) {
-						printf(": numbers match - marking errors.");
+						/*printf(": numbers match - marking errors.");*/
 						errorBoard[ci][cj] = ERROR;
 						errorBoard[ri][rj] = ERROR;
 					}
-					printf("\n");
+					/*printf("\n");*/
 				}
 			}
-			printf("\n");
+			/*printf("\n");*/
 		}
 	}
 }

@@ -1,3 +1,6 @@
+#ifndef GAMESTRUCT_H_
+#define GAMESTRUCT_H_
+
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -51,3 +54,7 @@ int checkForErrors(game *gptr);
  * error flags for cells with no value or cells with no duplicate value in their row.
  *
  * checkForErrors replaces the board entirely with valid/error values, regardless of old validity values. */
+
+
+
+#endif /* GAMESTRUCT_H_ */
