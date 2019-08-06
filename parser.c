@@ -6,14 +6,15 @@
  *
  *
  *
- * module purpose:
- * parsing user input, and decide if it's valid MOSTLY SYNTACTICALLY,
- * i.e, if the command name and number of arguments are valid.
- * THAT SAID, because game-state dependent errors need to be printed to
- * user independent of correcteness of arguments (for example, using
- * the command "generate" in "solve" mode should result in error).
- * the correcteness of the arguments in regard to board dimensions,
- * currnet cell value and so on, will be treated in game/operations module
+ * Parser module purpose:
+	 * Parsing user input, and decide if it's valid mostly SYNTACTICALLY,
+	 * i.e, if the command name and number of arguments are valid.
+	 * THAT SAID, because game-mode dependent errors need to be printed to
+	 * user without regard to correctness of arguments.
+	 * For example, using the command "generate" in "solve" mode should result in error,
+	 * without regard to the rest of the arguments.
+	 * The correctness of the arguments in regard to board dimensions,
+	 * current cell value and so on, will be treated in user_op module.
  */
 
 # include <stdlib.h>
@@ -31,7 +32,7 @@
  * using fgets on the standard input. if line is not longer
  * than 257 chars including last newline char, returns an
  * array which contains the line.
- * if longer than 257 chars, returns a singleton with the constant INVALID_LENGTH.
+ * if longer than 257 chars, updates.
  * if EOF, return singleton containing END_OF_FILE */
 char* parse_get_line(int* flags, char* line) {
 	int k;
@@ -89,7 +90,7 @@ int parse_print_command_correct_args(int* flags) {
 	printf("Correct syntax is: ");
 	if (flags[USER_COMMAND] == SOLVE) {
 		printf("%s\n", SOLVE_SYN);
-	} else if (flags[USER_COMMAND] == EDIT) {
+	} else if ((flags[USER_COMMAND] == EDIT_NO_PATH)||((flags[USER_COMMAND] == EDIT_WITH_PATH))) {
 		printf("%s\n", EDIT_SYN);
 	} else if (flags[USER_COMMAND] == MARK_ERRORS) {
 		printf("%s\n", MARK_ERRORS_SYN);
@@ -127,6 +128,11 @@ int parse_print_command_modes_error(int num_args, ...) {
 		to_print[k] = va_arg(list, char*);
 	}
 
+	if (errno) {
+		printf("Error during game memory allocation.\n");
+		exit(errno);
+	}
+
 	printf("Command %s not available in current mode"
 			", is available in %s %s%s%s only", to_print[0], to_print[1],
 			((num_args > 2) ? "and " : ""), ((num_args > 2) ? to_print[2] : ""),
@@ -144,16 +150,16 @@ int parse_print_command_modes_error(int num_args, ...) {
  * the optional argument is used to differentiate between
  * "solve" and "save" which have a mandatory path
  * and "edit" where the path is optional*/
-int parse_command_path(int* flags, char* token, char *strings[],
-		int is_optional) {
+int parse_command_path(int* flags, char* token, char *strings[],int is_optional) {
 	char *path;
 	int k;
 	int j = 0;
-	;
 
-	token = strtok(NULL, "\r\n");/*path could be token that ends in newline, no tabs or ws*/
-	if (is_optional && (token == NULL)) {/*if edit an and no path given, return*/
-		strings[PATH] = 0;
+	token = strtok(NULL, "\r\n");/*path could be token that ends in newline, not in tabs or ws*/
+	if ((is_optional) && (token == NULL)) {/*if edit an and no path given, return*/
+		strings[PATH] = NULL;
+		strings[USER_COMMAND_NAME]=EDIT_STR;
+		flags[USER_COMMAND]=EDIT_NO_PATH;
 		return 0;
 	}
 
@@ -161,6 +167,13 @@ int parse_command_path(int* flags, char* token, char *strings[],
 		printf("Not enough arguments for command %s\n",
 				strings[USER_COMMAND_NAME]);
 		parse_print_command_correct_args(flags);
+		flags[INVALID_USER_COMMAND]=1;
+		return 0;
+	}
+
+	if (is_optional){
+		flags[USER_COMMAND]=EDIT_WITH_PATH;
+		strings[USER_COMMAND_NAME]=EDIT_STR;
 	}
 
 	/*more than double the space allocated for windows based paths
@@ -182,8 +195,6 @@ int parse_command_path(int* flags, char* token, char *strings[],
 	}
 
 	strings[PATH] = path;
-
-	printf("PATH is:  %s\n", strings[PATH]);
 
 	return 0;
 }
@@ -249,13 +260,11 @@ int parse_line(char *line, int *flags, char* strings[]) {
 	else if ((strcmp(token, SOLVE_STR)) == 0) {
 		flags[USER_COMMAND] = SOLVE;
 		strings[USER_COMMAND_NAME] = SOLVE_STR;
-		parse_command_path(flags, token, strings, 0);
+		parse_command_path(flags, token, strings,0);
 	}
 
 	else if ((strcmp(token, EDIT_STR)) == 0) {
-		flags[USER_COMMAND] = EDIT;
-		strings[USER_COMMAND_NAME] = EDIT_STR;
-		parse_command_path(flags, token, strings, 1);
+		parse_command_path(flags, token, strings,1);
 	}
 
 	else if ((strcmp(token, MARK_ERRORS_STR)) == 0) {
@@ -270,11 +279,10 @@ int parse_line(char *line, int *flags, char* strings[]) {
 	}
 
 	else if ((strcmp(token, PRINT_BOARD_STR)) == 0) {
-		if ((flags[MODE] != MODE_SOLVE) && (flags[MODE] != MODE_EDIT)) {
+		if (flags[MODE]==MODE_INIT) {
 			parse_print_command_modes_error(3, PRINT_BOARD_STR, "solve",
 					"edit");
 			flags[INVALID_USER_COMMAND] = 1;
-			return 0;
 		} else {
 			flags[USER_COMMAND] = PRINT_BOARD;
 			strings[USER_COMMAND_NAME] = PRINT_BOARD_STR;
@@ -283,10 +291,9 @@ int parse_line(char *line, int *flags, char* strings[]) {
 	}
 
 	else if ((strcmp(token, SET_STR)) == 0) {
-		if ((flags[MODE] != MODE_SOLVE) && (flags[MODE] != MODE_EDIT)) {
+		if (flags[MODE]==MODE_INIT) {
 			parse_print_command_modes_error(3, SET_STR, "solve", "edit");
 			flags[INVALID_USER_COMMAND] = 1;
-			return 0;
 		} else {
 			flags[USER_COMMAND] = SET;
 			strings[USER_COMMAND_NAME] = SET_STR;
@@ -296,10 +303,9 @@ int parse_line(char *line, int *flags, char* strings[]) {
 	}
 
 	else if ((strcmp(token, VALIDATE_STR)) == 0) {
-		if ((flags[MODE] != MODE_SOLVE) && (flags[MODE] != MODE_EDIT)) {
+		if (flags[MODE]==MODE_INIT) {
 			parse_print_command_modes_error(3, VALIDATE_STR, "solve", "edit");
 			flags[INVALID_USER_COMMAND] = 1;
-			return 0;
 		} else {
 			flags[USER_COMMAND] = VALIDATE;
 			strings[USER_COMMAND_NAME] = VALIDATE_STR;
@@ -311,9 +317,8 @@ int parse_line(char *line, int *flags, char* strings[]) {
 		if (flags[MODE] != MODE_SOLVE) {
 			parse_print_command_modes_error(2, GUESS_STR, "solve");
 			flags[INVALID_USER_COMMAND] = 1;
-			return 0;
 		}
-		{
+		else{
 			flags[USER_COMMAND] = GUESS;
 			strings[USER_COMMAND_NAME] = GUESS_STR;
 			parse_command_args(flags, strings, token, 1);
@@ -324,9 +329,8 @@ int parse_line(char *line, int *flags, char* strings[]) {
 		if (flags[MODE] != MODE_SOLVE) {
 			parse_print_command_modes_error(2, GENERATE_STR, "edit");
 			flags[INVALID_USER_COMMAND] = 1;
-			return 0;
 		}
-		{
+		else{
 			flags[USER_COMMAND] = GENERATE;
 			strings[USER_COMMAND_NAME] = GENERATE_STR;
 			parse_command_args(flags, strings, token, 2);
@@ -334,12 +338,11 @@ int parse_line(char *line, int *flags, char* strings[]) {
 	}
 
 	else if ((strcmp(token, UNDO_STR)) == 0) {
-		if ((flags[MODE] != MODE_SOLVE) && (flags[MODE] != MODE_EDIT)) {
+		if (flags[MODE]==MODE_INIT) {
 			parse_print_command_modes_error(3, UNDO_STR, "solve", "edit");
 			flags[INVALID_USER_COMMAND] = 1;
-			return 0;
 		}
-		{
+		else{
 			flags[USER_COMMAND] = UNDO;
 			strings[USER_COMMAND_NAME] = UNDO_STR;
 			parse_command_no_args(flags, strings, token);
@@ -347,10 +350,9 @@ int parse_line(char *line, int *flags, char* strings[]) {
 	}
 
 	else if ((strcmp(token, REDO_STR)) == 0) {
-		if ((flags[MODE] != MODE_SOLVE) && (flags[MODE] != MODE_EDIT)) {
+		if (flags[MODE]==MODE_INIT) {
 			parse_print_command_modes_error(3, REDO_STR, "solve", "edit");
 			flags[INVALID_USER_COMMAND] = 1;
-			return 0;
 		} else {
 			flags[USER_COMMAND] = REDO;
 			strings[USER_COMMAND_NAME] = REDO_STR;
@@ -359,14 +361,13 @@ int parse_line(char *line, int *flags, char* strings[]) {
 	}
 
 	else if ((strcmp(token, SAVE_STR)) == 0) {
-		if ((flags[MODE] != MODE_SOLVE) && (flags[MODE] != MODE_EDIT)) {
+		if (flags[MODE]==MODE_INIT) {
 			parse_print_command_modes_error(3, SAVE_STR, "solve", "edit");
 			flags[INVALID_USER_COMMAND] = 1;
-			return 0;
 		} else {
 			flags[USER_COMMAND] = SAVE;
 			strings[USER_COMMAND_NAME] = SAVE_STR;
-			parse_command_path(flags, token, strings, 0);
+			parse_command_path(flags, token, strings,0);
 		}
 	}
 
@@ -374,7 +375,6 @@ int parse_line(char *line, int *flags, char* strings[]) {
 		if (flags[MODE] != MODE_SOLVE) {
 			parse_print_command_modes_error(2, HINT_STR, "solve");
 			flags[INVALID_USER_COMMAND] = 1;
-			return 0;
 		} else {
 			flags[USER_COMMAND] = HINT;
 			strings[USER_COMMAND_NAME] = HINT_STR;
@@ -386,7 +386,6 @@ int parse_line(char *line, int *flags, char* strings[]) {
 		if (flags[MODE] != MODE_SOLVE) {
 			parse_print_command_modes_error(2, GUESS_HINT_STR, "solve");
 			flags[INVALID_USER_COMMAND] = 1;
-			return 0;
 		} else {
 			flags[USER_COMMAND] = GUESS_HINT;
 			strings[USER_COMMAND_NAME] = GUESS_HINT_STR;
@@ -395,11 +394,10 @@ int parse_line(char *line, int *flags, char* strings[]) {
 	}
 
 	else if ((strcmp(token, NUM_SOLUTIONS_STR)) == 0) {
-		if ((flags[MODE] != MODE_SOLVE) && (flags[MODE] != MODE_EDIT)) {
+		if (flags[MODE]==MODE_INIT) {
 			parse_print_command_modes_error(3, NUM_SOLUTIONS_STR, "solve",
 					"edit");
 			flags[INVALID_USER_COMMAND] = 1;
-			return 0;
 		} else {
 			flags[USER_COMMAND] = NUM_SOLUTIONS;
 			strings[USER_COMMAND_NAME] = NUM_SOLUTIONS_STR;
@@ -411,7 +409,6 @@ int parse_line(char *line, int *flags, char* strings[]) {
 		if (flags[MODE] != MODE_SOLVE) {
 			parse_print_command_modes_error(2, AUTOFILL_STR, "solve");
 			flags[INVALID_USER_COMMAND] = 1;
-			return 0;
 		} else {
 			flags[USER_COMMAND] = AUTOFILL;
 			strings[USER_COMMAND_NAME] = AUTOFILL_STR;
@@ -420,10 +417,9 @@ int parse_line(char *line, int *flags, char* strings[]) {
 	}
 
 	else if ((strcmp(token, RESET_STR)) == 0) {
-		if ((flags[MODE] != MODE_SOLVE) && (flags[MODE] != MODE_EDIT)) {
+		if (flags[MODE]==MODE_INIT) {
 			parse_print_command_modes_error(3, RESET_STR, "solve", "edit");
 			flags[INVALID_USER_COMMAND] = 1;
-			return 0;
 		} else {
 			flags[USER_COMMAND] = RESET;
 			strings[USER_COMMAND_NAME] = RESET_STR;
@@ -452,20 +448,18 @@ int parse_line(char *line, int *flags, char* strings[]) {
 int parse_user(int *flags, char *strings[]) {
 	char input[BUFF_SIZE];
 	char *line;
-	int k=0;
+	int k = 0;
 
 	if (flags[EOF_EXIT]) {/*if previous line end in EOF*/
 		return 0;
 	}
 
-	printf("Please enter a command\n");
-
+	printf("Please enter a command:\n");
 
 	/*nullify user command range before iteration*/
-	for (k=NULLIFY_START;k<=NULLIFY_END;k++){
-		flags[k]=0;
+	for (k = NULLIFY_START; k <= NULLIFY_END; k++) {
+		flags[k] = 0;
 	}
-
 
 	line = parse_get_line(flags, input);/*read line chars from stdin*/
 
@@ -476,8 +470,6 @@ int parse_user(int *flags, char *strings[]) {
 		/* return and prompt user for another line (part of game flow)*/
 		return 0;
 	}
-
-
 
 	/*if valid line, parse line and fill flags*/
 	parse_line(line, flags, strings);
