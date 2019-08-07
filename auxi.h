@@ -7,6 +7,11 @@
 
 #ifndef AUXI_H_
 #define AUXI_H_
+# include <stdlib.h>
+# include <stdio.h>
+# include <string.h>
+# include <errno.h>
+# include <stdarg.h>
 
 /*constants definitions*/
 
@@ -17,11 +22,15 @@
 # define END_OF_FILE 1
 # define FALSE 0
 # define TRUE 1
+# define ARGS_PASS_FUNC gptr,flags,strings
+# define ARGS_DEF_FUNC game *gptr,int *flags,char **strings
 
-/*flags array indices definitions
 
- ++ALL VALUES MUST BE DISTINCT++
+/*								FLAGS ARRAY						*/
 
+
+/*
+ 	 	 	 	 	 ++ALL VALUES MUST BE DISTINCT++
  */
 # define MODE 0
 
@@ -39,26 +48,34 @@
 
 # define USER_COMMAND 5 /*name of command*/
 
-	# define SOLVE 1
-	# define EDIT 2
-	# define MARK_ERRORS 3
-	# define PRINT_BOARD 4
-	# define SET 5
-	# define VALIDATE 6
-	# define GUESS 7
-	# define GENERATE 8
-	# define UNDO 9
-	# define REDO 10
-	# define SAVE 11
-	# define HINT 12
-	# define GUESS_HINT 13
-	# define NUM_SOLUTIONS 14
-	# define AUTOFILL 15
-	# define RESET 16
-	# define EXIT 17
+	# define SOLVE 0
+	# define EDIT 1
+	# define MARK_ERRORS 2
+	# define PRINT_BOARD 3
+	# define SET 4
+	# define VALIDATE 5
+	# define GUESS 6
+	# define GENERATE 7
+	# define UNDO 8
+	# define REDO 9
+	# define SAVE 10
+	# define HINT 11
+	# define GUESS_HINT 12
+	# define NUM_SOLUTIONS 13
+	# define AUTOFILL 14
+	# define RESET 15
+	# define EXIT 16
+	# define EDIT_NO_PATH 17
+	# define EDIT_WITH_PATH 18
+
+# define INVALID_USER_COMMAND 6
+
+# define MARK_ERRORS 7
 
 
-# define USER_COMMAND_NAME 0 /*name of command*/
+/*								STRINGS ARRAY						*/
+
+# define USER_COMMAND_NAME 0 /*name of command - in strings array*/
 
 	# define SOLVE_STR "solve"
 	# define EDIT_STR "edit"
@@ -97,7 +114,6 @@
 
 # define PATH 4 /* cell for storing path string TODO - need to be freed upon exit*/
 
-# define INVALID_USER_COMMAND 10
 
 /* in each iteration of parsing user input,
  * values in flags array need to be nullified
