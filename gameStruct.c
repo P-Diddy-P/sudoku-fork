@@ -66,14 +66,14 @@ void checkColumnForErrors(game *gptr, int **errorBoard, int colId) {
 	}
 }
 
-
+/* TODO extremely convoluted indexing, consider revising */
 void checkBlockForErrors(game *gptr, int **errorBoard, int blockId) {
 	int si = blockId - (blockId % gptr->rows); /* row of first cell in block */
 	int sj = (blockId % gptr->rows) * gptr->cols; /* column of first cell in block */
-	int ci, cj;
-	int ri, rj;
+	int ci, cj; /* iteration variables for the currently checked reference */
+	int ri, rj; /* iteration variables for values compared to the current reference */
 
-	for (ci=si; ci<si+gptr->rows; ci++) { /* TODO extremely convoluted iteration, consider revising */
+	for (ci=si; ci<si+gptr->rows; ci++) {
 		for (cj=sj; cj<sj+gptr->cols; cj++) {
 			/*printf("[[testing cell[%d][%d]=%d]]\n\n", ci, cj, gptr->user[ci][cj]);*/
 
@@ -98,6 +98,42 @@ void checkBlockForErrors(game *gptr, int **errorBoard, int blockId) {
 			/*printf("\n");*/
 		}
 	}
+}
+
+
+int rowValidValue(game *gptr, int row, int value) {
+	int j;
+	for (j=0; j<gptr->sideLength; j++) {
+		if (gptr->user[row][j] == value) {
+			return 0;
+		}
+	}
+	return 1;
+}
+
+
+int colValidValue(game *gptr, int col, int value) {
+	int i;
+	for (i=0; i<gptr->sideLength; i++) {
+		if (gptr->user[i][col] == value) {
+			return 0;
+		}
+	}
+	return 1;
+}
+
+int blockValidValue(game *gptr, int valueRow, int valueCol, int value) {
+	int i, j;
+	int startRow = valueRow - valueRow % gptr->rows, startCol = valueCol - valueCol % gptr->cols;
+
+	for (i=startRow; i<startRow+gptr->rows; i++) {
+		for (j=startCol; j<startCol+gptr->cols; j++) {
+			if (gptr->user[i][j] == value) {
+				return 0;
+			}
+		}
+	}
+	return 1;
 }
 
 
@@ -188,7 +224,7 @@ void updateRandom(game *gptr, int seed, int addFlags) {
 	}
 }
 
-int checkForErrors(game *gptr) {
+int updateBoardErrors(game *gptr) {
 	int i, j, errorsInBoard = 0;
 	int **validationBoard = malloc(gptr->sideLength * sizeof(int *));
 	for (i=0; i<gptr->sideLength; i++) {
@@ -207,4 +243,31 @@ int checkForErrors(game *gptr) {
 		}
 	}
 	return errorsInBoard;
+}
+
+
+int boardHasErrors(game *gptr) {
+	int i, j;
+
+	for (i=0; i<gptr->sideLength; i++) {
+		for (j=0; j<gptr->sideLength; j++) {
+			if (gptr->flag[i][j] == ERROR) {
+				return 1;
+			}
+		}
+	}
+	return 0;
+}
+
+
+int checkValidValue(game *gptr, int row, int col, int value) {
+	int tmp = gptr->user[row][col];
+	gptr->user[row][col] = 0;
+
+	int rowValid = rowValidValue(gptr, row, value);
+	int colValid = colValidValue(gptr, col, value);
+	int blockValid = blockValidValue(gptr, row, col, value);
+
+	gptr->user[row][col] = tmp;
+	return (rowValid && colValid && blockValid);
 }

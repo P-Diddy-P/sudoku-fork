@@ -44,17 +44,30 @@ void updateBoard(game *gptr, int len, int *rowIds, int *colIds, int *values, int
 /* Inserts values from array to the board for debug purposes. a flags array doesn't have to
  * be provided (can be replaced by null pointer) */
 
-void updateRandom(game *gptr, int seed, int addFlags);
+void updateRandom(game *gptr, int seed, int addFlags); /* TODO: debug function, remove before submitting */
 /* Fills the board entirely with random values according to a predefined seed. Can also fill
  * flags randomly. NOTE: addFlags must be binary (0 or 1)! */
 
-int checkForErrors(game *gptr);
+int updateBoardErrors(game *gptr);
 /* Checks the entire board for errors in row, column and block and returns 0 for no errors, 1 otherwise.
  * Function also updates non-fixed cells to have an error flag if they have a duplicate value, and removes
  * error flags for cells with no value or cells with no duplicate value in their row.
  *
  * checkForErrors replaces the board entirely with valid/error values, regardless of old validity values. */
 
+int boardHasErrors(game *gptr);
+/* Checks flag board for errors. Returning true if any cell in the board has ERROR flag, false otherwise.
+ * Assumes the board is updated, i.e. every ERROR flagged cell corresponds to a cell with a problematic value.
+ */
 
+int checkValidValue(game *gptr, int row, int col, int value);
+/*
+ * Checks if setting value is [row][col] in the board keeps the board valid. Runs faster than checkForErrors
+ * (linear instead of quadratic), but compares all row/column/block values to a single given value. In case
+ * row/col/block already have errors, the value is invalid.
+ *
+ * NOTE: checkValidValue compares all values in a certain row/col/block to a POSSIBLE value, which is not necessarily
+ * on the board. The value in gptr->user[row][col] is removed for the duration of the function, then returned.
+ */
 
 #endif /* GAMESTRUCT_H_ */

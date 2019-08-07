@@ -1,9 +1,9 @@
 #include "stackTracking.h"
+#include "gameStruct.h"
 
 void stackInit(stack *stkptr) {
 	stkptr->totalSize = STACK_INIT_SIZE;
-	stkptr->usedSize = -1;
-	stkptr->current = NULL;
+	stkptr->usedSize = 0;
 	stkptr->stackArray = malloc(stkptr->totalSize * sizeof(int *));
 	if (errno || stkptr->stackArray == NULL) {
 		printf("Error during memory allocation.%s\n", (stkptr->stackArray == NULL) ? "Received null pointer." : "");
@@ -12,9 +12,23 @@ void stackInit(stack *stkptr) {
 }
 
 
-void stackResize(stack *stkptr, int enlarge) {
-	stkptr->totalSize = stkptr->totalSize + (enlarge) ? STACK_ENLARGE_SIZE : -STACK_ENLARGE_SIZE;
-	stkptr->stackArray = realloc(stkptr->stackArray, stkptr->totalSize);
+void stackDiminish(stack *stkptr) {
+	/* printf("    reducing stack size by %d\n", STACK_ENLARGE_RATE); */
+
+	stkptr->totalSize = stkptr->totalSize/STACK_ENLARGE_RATE;
+	stkptr->stackArray = realloc(stkptr->stackArray, stkptr->totalSize * sizeof(int *));
+	if (errno || stkptr->stackArray == NULL) {
+		printf("Error during memory allocation.%s\n", (stkptr->stackArray == NULL) ? "Received null pointer." : "");
+		exit((errno) ? errno : 1);
+	}
+}
+
+
+void stackEnlarge(stack *stkptr) {
+	/* printf("    increasing stack size by %d\n", STACK_ENLARGE_RATE); */
+
+	stkptr->totalSize = stkptr->totalSize*STACK_ENLARGE_RATE;
+	stkptr->stackArray = realloc(stkptr->stackArray, stkptr->totalSize * sizeof(int *));
 	if (errno || stkptr->stackArray == NULL) {
 		printf("Error during memory allocation.%s\n", (stkptr->stackArray == NULL) ? "Received null pointer." : "");
 		exit((errno) ? errno : 1);
@@ -28,32 +42,51 @@ void stackPush(stack *stkptr, int row, int col, int value) {
 	*(newMember + 1) = col;
 	*(newMember + 2) = value;
 
-	if (stkptr->usedSize >= stkptr->totalSize) {
-		stackResize(stkptr, 1);
+	if (stkptr->usedSize >= stkptr->totalSize*STACK_INC_THRESHOLD) {
+		/* printf("    requiring stack resize. using %d out of %d cells", stkptr->usedSize, stkptr->totalSize); */
+		stackEnlarge(stkptr);
 	}
-
 	stkptr->usedSize++;
-	(stkptr->stackArray)[stkptr->usedSize] = newMember;
-	stkptr->current = newMember;
+	stkptr->stackArray[stkptr->usedSize - 1] = newMember;
 }
 
 
-int *stackPop(stack *stkptr) { /* TODO currently stackPop doesn't free members popped from the stack.
- 	 	 	 	 	 	 	 	  find a solution. Perhaps a generic return address which values are copied to
- 	 	 	 	 	 	 	 	  then the member can be deleted. Otherwise defer responsibility of nulling data to
- 	 	 	 	 	 	 	 	  stacktracking function itself. */
-	if (stkptr->usedSize < 0) {
-		return NULL;
+void stackPop(stack *stkptr, int *dstptr) {
+	stackPeek(stkptr, dstptr);
+	if ((stkptr->usedSize <= stkptr->totalSize*STACK_DEC_THRESHOLD) && (stkptr->totalSize > STACK_INIT_SIZE)) {
+		/* printf("    requiring stack resize. using %d out of %d cells", stkptr->usedSize, stkptr->totalSize); */
+		stackDiminish(stkptr);
 	}
-	stkptr->usedSize--;
-	stkptr->current = (stkptr->stackArray)[stkptr->usedSize];
-	return stkptr->stackArray[stkptr->usedSize + 1];
+	if (stkptr->usedSize > 0) {
+		free(stkptr->stackArray[stkptr->usedSize - 1]);
+		stkptr->usedSize--;
+	}
 }
 
 
-int *stackPeek(stack *stkptr) {
-	if (stkptr->usedSize < 0) {
-		return NULL;
+void stackPeek(stack *stkptr, int *dstptr) {
+	int i;
+
+	if (stkptr->usedSize <= 0) {
+		for (i=0; i<3; i++) {
+			*(dstptr + i) = -1;
+		}
+	} else {
+		for (i=0; i<3; i++) {
+			*(dstptr + i) = stkptr->stackArray[stkptr->usedSize - 1][i];
+		}
 	}
-	return stkptr->current;
+}
+
+
+int stackTracking(game *gptr) {
+	int possibleSolutions = 0;
+
+	if (boardHasErrors(gptr)) { /* If there are errors in board, there are no solutions */
+		return 0;
+	}
+
+	/* fill in stack logic */
+
+	return possibleSolutions;
 }
