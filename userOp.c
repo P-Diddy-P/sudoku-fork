@@ -51,7 +51,7 @@ int edit(ARGS_DEF_FUNC){
 
 	/* if edit with no path, init with empty 9X9 board*/
 	if (flags[USER_COMMAND]==EDIT_NO_PATH){
-		gptr = initBoard(gptr,3,3);
+		init_board(gptr,3,3);
 		/*TODO - return?*/
 	}
 	else {
@@ -91,12 +91,12 @@ int mark_errors(ARGS_DEF_FUNC){
 }
 
 
-/*TODO - */
+/*TODO - *//*
 int print_board(ARGS_DEF_FUNC){
 
 	return 0;
 }
-
+*/
 /*TODO - */
 int set(ARGS_DEF_FUNC){
 

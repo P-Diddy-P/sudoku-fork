@@ -34,33 +34,33 @@ typedef struct game {
 
 /* gameStruct.c functions */
 
-void initBoard(game * gptr, int rows, int cols);
+void init_board(game * gptr, int rows, int cols);
 /* Initialize an empty game board and returns a pointer to it */
 
-void printBoard(game *gptr);
+void print_board(game *gptr);
 /* Prints the game board, including error marks and fixed values */
 
-void updateBoard(game *gptr, int len, int *rowIds, int *colIds, int *values, int * flags);
+void update_board(game *gptr, int len, int *rowIds, int *colIds, int *values, int * flags);
 /* Inserts values from array to the board for debug purposes. a flags array doesn't have to
  * be provided (can be replaced by null pointer) */
 
-void updateRandom(game *gptr, int seed, int addFlags); /* TODO: debug function, remove before submitting */
+void update_random(game *gptr, int seed, int addFlags); /* TODO: debug function, remove before submitting */
 /* Fills the board entirely with random values according to a predefined seed. Can also fill
  * flags randomly. NOTE: addFlags must be binary (0 or 1)! */
 
-int updateBoardErrors(game *gptr);
+int update_board_errors(game *gptr);
 /* Checks the entire board for errors in row, column and block and returns 0 for no errors, 1 otherwise.
  * Function also updates non-fixed cells to have an error flag if they have a duplicate value, and removes
  * error flags for cells with no value or cells with no duplicate value in their row.
  *
  * checkForErrors replaces the board entirely with valid/error values, regardless of old validity values. */
 
-int boardHasErrors(game *gptr);
+int board_has_errors(game *gptr);
 /* Checks flag board for errors. Returning true if any cell in the board has ERROR flag, false otherwise.
  * Assumes the board is updated, i.e. every ERROR flagged cell corresponds to a cell with a problematic value.
  */
 
-int checkValidValue(game *gptr, int row, int col, int value);
+int check_valid_value(game *gptr, int row, int col, int value);
 /*
  * Checks if setting value is [row][col] in the board keeps the board valid. Runs faster than checkForErrors
  * (linear instead of quadratic), but compares all row/column/block values to a single given value. In case
