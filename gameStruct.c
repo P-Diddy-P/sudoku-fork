@@ -142,6 +142,19 @@ int block_valid_value(game *gptr, int valueRow, int valueCol, int value) {
 /*******************************************************/
 
 
+int find_next_empty_cell(game *gptr, int *rowAddress, int *colAddress) {
+	while (gptr->user[*rowAddress][*colAddress]) {
+		*rowAddress += (*colAddress + 1) / gptr->sideLength;
+		*colAddress = (*colAddress + 1) % gptr->sideLength;
+
+		if (*rowAddress > gptr->sideLength - 1 || *colAddress > gptr->sideLength - 1) {
+			return 1; /* indicating overflow - reached the end of the board */
+		}
+	}
+	return 0;
+}
+
+
 void init_board(game * gptr, int rows, int cols) {
 	/* Construct a game board with given rows and cols per block */
 	int i;

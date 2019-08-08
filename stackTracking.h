@@ -27,6 +27,6 @@ void stack_enlarge(stack *stkptr);
 void stack_pop(stack *stkptr, int *dstptr);
 void stack_peek(stack *stkptr, int *dstptr);
 */
-int stackTracking(game *gptr);
+int stack_tracking(game *gptr);
 
 #endif /* STACKTRACKING_H_ */

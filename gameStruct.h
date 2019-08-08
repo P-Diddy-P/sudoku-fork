@@ -70,4 +70,14 @@ int check_valid_value(game *gptr, int row, int col, int value);
  * on the board. The value in gptr->user[row][col] is removed for the duration of the function, then returned.
  */
 
+int find_next_empty_cell(game *gptr, int *rowAddress, int *colAddress);
+/* Find the next cell with no number assigned to it (i.e. 0), starting from the
+ * given [*rowAddress][*colAddress] coordinates. The coordinates given to the function
+ * are set to the next empty cell, mimicking call-by-reference, and the return value indicates
+ * whether the end of the board was reached (return true), or not (return false).
+ *
+ * Note that the search is inclusive, i.e. if
+ * gptr->[*rowAddress][*colAddress] == 0, then the given addresses will not change value.
+ */
+
 #endif /* GAMESTRUCT_H_ */
