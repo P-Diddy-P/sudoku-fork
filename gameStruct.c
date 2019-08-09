@@ -143,6 +143,11 @@ int block_valid_value(game *gptr, int valueRow, int valueCol, int value) {
 
 
 int find_next_empty_cell(game *gptr, int *rowAddress, int *colAddress) {
+	/* make sure the initial coordinates are not overflowing */
+	if (*rowAddress > gptr->sideLength - 1 || *colAddress > gptr->sideLength - 1) {
+		return 1;
+	}
+
 	while (gptr->user[*rowAddress][*colAddress]) {
 		*rowAddress += (*colAddress + 1) / gptr->sideLength;
 		*colAddress = (*colAddress + 1) % gptr->sideLength;

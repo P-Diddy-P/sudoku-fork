@@ -9,7 +9,7 @@ int auto_complete(game *gptr);
  * returns true if any cell was filled during the run, false otherwise.
  */
 
-/* int iterative_auto_complete(game *gptr); */
+int iterative_auto_complete(game *gptr);
 /* Goes over all empty cells in the board, filling each cell only if there is
  * a single possible value which can be put in the cell with the board staying valid.
  * This function uses auto_complete as a subroutine, and runs as many times as necessary

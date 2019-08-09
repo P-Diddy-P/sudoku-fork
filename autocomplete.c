@@ -25,6 +25,9 @@ int auto_complete(game *gptr) {
 		if ( (svPlaceholder = find_single_valid_value(gptr, currentRow, currentCol)) ) {
 			gptr->user[currentRow][currentCol] = svPlaceholder;
 			cellsFilled++;
+		} else {
+			currentRow += (currentCol + 1) / gptr->sideLength;
+			currentCol = (currentCol + 1) % gptr->sideLength;
 		}
 	}
 	return cellsFilled;
@@ -36,6 +39,7 @@ int iterative_auto_complete(game *gptr) {
 
 	while (auto_complete(gptr)) {
 		autocompleteRounds++;
+		print_board(gptr);
 	}
 
 	return autocompleteRounds;
