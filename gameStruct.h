@@ -34,6 +34,10 @@ typedef struct game {
 
 /* gameStruct.c functions */
 
+void copy_board(game *gptr, int **dstBoard, int toGame);
+/* Copies the current user board to\from a two dimensional array. NOTE: dstBoard must be initialized
+ * to the correct size before being used in this function. */
+
 void init_board(game * gptr, int rows, int cols);
 /* Initialize an empty game board and returns a pointer to it */
 

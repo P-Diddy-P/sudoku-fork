@@ -142,6 +142,21 @@ int block_valid_value(game *gptr, int valueRow, int valueCol, int value) {
 /*******************************************************/
 
 
+void copy_board(game *gptr, int **dstBoard, int toGame) {
+	int i, j;
+
+	for (i=0; i<gptr->sideLength; i++) {
+		for (j=0; j<gptr->sideLength; j++) {
+			if (toGame) {
+				gptr->user[i][j] = dstBoard[i][j];
+			} else {
+				dstBoard[i][j] = gptr->user[i][j];
+			}
+		}
+	}
+}
+
+
 int find_next_empty_cell(game *gptr, int *rowAddress, int *colAddress) {
 	/* make sure the initial coordinates are not overflowing */
 	if (*rowAddress > gptr->sideLength - 1 || *colAddress > gptr->sideLength - 1) {
