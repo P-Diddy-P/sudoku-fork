@@ -41,6 +41,11 @@ int solve(ARGS_DEF_FUNC){
 	return 0;
 }
 
+int stabItai(ARGS_DEF_FUNC) {
+	printf("die itai die");
+	return 0;
+}
+
 
 /*TODO - use file-I/O module to load game from file,
  * update game mode to edit
