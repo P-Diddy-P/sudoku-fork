@@ -70,11 +70,6 @@ void solve(ARGS_DEF_FUNC) {
 
 }
 
-int stabItai(ARGS_DEF_FUNC) {
-	printf("die itai die");
-	return 0;
-}
-
 
 /* Edit command -
  * if no path provided, load new empty 9X9 board*/
