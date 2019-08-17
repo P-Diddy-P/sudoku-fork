@@ -12,9 +12,9 @@
 # include "gameStruct.h"
 
 
-int load_board();
+game* load_board(ARGS_DEF_FUNC);
 
-int save_board();
+int save_board(ARGS_DEF_FUNC);
 
 
 #endif /* FILEIO_H_ */

@@ -12,6 +12,9 @@
 # include <string.h>
 # include <errno.h>
 # include <stdarg.h>
+# include <ctype.h>
+#include <math.h>
+
 
 /*constants definitions*/
 
@@ -70,7 +73,13 @@
 
 # define INVALID_USER_COMMAND 6
 
-# define MARK_ERRORS 7
+/* load assisting cells*/
+
+# define LOAD_IS_INVALID_FORMAT 7
+
+# define LOAD_IS_EOF 8
+
+
 
 
 /*								STRINGS ARRAY						*/
@@ -123,6 +132,6 @@
  * user commands and if their valid */
 
 # define NULLIFY_START 3
-# define NULLIFY_END 6
+# define NULLIFY_END 8
 
 #endif /* AUXI_H_ */

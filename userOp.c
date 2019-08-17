@@ -5,7 +5,7 @@
  *      Author: itait
  *
  *
- *module purpose:
+ *Module purpose:
  *	 Includes all operations defined in the game.
  *	 The public function user_op receives the game pointer, flags and strings
  *	 and operates upon the current board or prints to user the appropriate error message.
@@ -18,175 +18,190 @@
  *	 No need to check if mode is valid, being checked in parse module
  */
 
-
-
-
 #include "auxi.h"
 #include "gameStruct.h"
-
+#include "fileIO.h"
 
 /* every operation-function receives as arguments the game pointer, flags int array
  * and strings */
 # define ARGS_DEF_FUNC game *gptr,int *flags,char **strings
 # define NUM_OPS 16
 
+typedef void (*f)(game*, int*, char**);
 
-typedef int (*f)(game*,int*,char**);
 
+
+
+
+/* ----------------------------------------
+ * ----------------------------------------
+ * ----------------------------------------
+ * ---------    USER OP FUNCTIONS ---------
+ * ----------------------------------------
+ * ----------------------------------------*/
+
+
+/* Free game pointer
+ * TODO maybe move to other module like gamestruct */
+void free_game_pointer(game *gptr) {
+	int i;
+
+	/* free row pointers*/
+	for (i = 0; i < gptr->sideLength; i++) {
+		free(gptr->user[i]);
+		free(gptr->flag[i]);
+	}
+	/* free array pointers */
+	free(gptr->user);
+	free(gptr->flag);
+}
+
+/* TODO - is there a function that does it? -
+ * Checks if there are erroneous fixed cells, to be used in
+ * edit and solve mode */
+int is_fixed_erron(game *gptr){
+
+	return 0;
+}
 
 /*TODO - use file-I/O module to load game from file,
  * update game mode to solve*/
-int solve(ARGS_DEF_FUNC){
+void solve(ARGS_DEF_FUNC) {
 
-	return 0;
 }
 
 
-/*TODO - use file-I/O module to load game from file,
- * update game mode to edit
- *
- * common functionality for "solve" and "edit" of
- * reading data from file and loading it into board*/
-int edit(ARGS_DEF_FUNC){
+/* Edit command -
+ * if no path provided, load new empty 9X9 board*/
+void edit(ARGS_DEF_FUNC) {
 
-	/* if edit with no path, init with empty 9X9 board*/
-	if (flags[USER_COMMAND]==EDIT_NO_PATH){
-		init_board(gptr,3,3);
-		/*TODO - return?*/
+	game *local_gptr;
+
+	/* if edit with no path, free current board init with empty 9X9 board*/
+	if (flags[USER_COMMAND] == EDIT_NO_PATH) {
+
+		free_game_pointer(gptr);
+		init_board(gptr, 3, 3);
+		return;
 	}
+	/* if path provided:
+	 * 		- try to load board
+	 * 		- if board loaded, check it's validity:
+	 * 			+ a fixed cell cannot be erroneous - i.e, there cannot
+	 * 			be two fixed cells that contradict each other.
+	 * 			check for erroneous fixed cells and fail if true  */
 	else {
-		/* TODO load from file:
-		 * 	1 - try to find file and open
-		 * 	2 - if found, check for validity of parameters m & n
-		 * 	and check for validity of data, in regard with:
-		 * 		+ type of chars and legal tokens - ints only
-		 * 		+ number of tokens
-		 * 		if all of the above is OK,
-		 * 		+ in edit mode:
-		 * 			board need to have a solution - validate first
-		 * 			board can't be erroneous
-		 * 			all values should be saved as fixed ('.')
-		 * 		+ in solve mode:
-		 * 			board can be erroneous
-		 * 			fixed values can't be erroneous (board can't get to that
-		 * 			state anyway with valid moves. still need to check that
-		 * 			fixed values are erroneous)
-		 * 	-
-		 * 	*/
 
+		/* create local board with loaded board */
+		local_gptr = load_board(ARGS_PASS_FUNC);
 
+		/* if loading failed, return error */
+		if (local_gptr == 0) {
+			flags[INVALID_USER_COMMAND] = 1;
+			return;
+		}
+
+		/* check if fixed cells in loaded board are erroneous.
+		 * if they are, return error and free board memory */
+		if (is_fixed_erron(local_gptr)) {
+			free_game_pointer(local_gptr);
+			flags[INVALID_USER_COMMAND] = 1;
+			return;
+		}
+
+		/* TODO need to check if board is solvable? */
+
+		/* if board is valid and not erroneous, free old gptr memory and plug new
+		 * board to gptr */
+		free_game_pointer(gptr);
+		gptr = local_gptr;
 	}
 
-
-	return 0;
 }
 
 /* TODO changing the mark_errors bit */
-int mark_errors(ARGS_DEF_FUNC){
+void mark_errors(ARGS_DEF_FUNC) {
 
 	/*TODO need a parse_int function, to be called on ARGS
 	 * need to return some error message according to hirarchy*/
 
-	return 0;
 }
 
+/*TODO - print_board already defined in gameStruct ??*/
+void print_board(ARGS_DEF_FUNC) {
 
-/*TODO - *//*
-int print_board(ARGS_DEF_FUNC){
-
-	return 0;
 }
-*/
+
 /*TODO - */
-int set(ARGS_DEF_FUNC){
+void set(ARGS_DEF_FUNC) {
 
-	return 0;
 }
 
 /*TODO - using solver module */
-int validate(ARGS_DEF_FUNC){
+void validate(ARGS_DEF_FUNC) {
 
-	return 0;
 }
 
 /*TODO - */
-int guess(ARGS_DEF_FUNC){
+void guess(ARGS_DEF_FUNC) {
 
-	return 0;
 }
 
 /*TODO - */
-int generate(ARGS_DEF_FUNC){
+void generate(ARGS_DEF_FUNC) {
 
-	return 0;
 }
 
 /*TODO - */
-int undo(ARGS_DEF_FUNC){
+void undo(ARGS_DEF_FUNC) {
 
-	return 0;
 }
 
 /*TODO - */
-int redo(ARGS_DEF_FUNC){
+void redo(ARGS_DEF_FUNC) {
 
-	return 0;
 }
 
 /*TODO - I/O module */
-int save(ARGS_DEF_FUNC){
+void save(ARGS_DEF_FUNC) {
 
-	return 0;
 }
 
 /*TODO -  */
-int hint(ARGS_DEF_FUNC){
+void hint(ARGS_DEF_FUNC) {
 
-	return 0;
 }
 
 /*TODO -  */
-int guess_hint(ARGS_DEF_FUNC){
+void guess_hint(ARGS_DEF_FUNC) {
 
-	return 0;
-}
-
-/*TODO - exhaustive backtrack */
-int num_solutions(ARGS_DEF_FUNC){
-
-	return 0;
-}
-
-/*TODO - for each cell, enumerate all possibilities for valid values - how?
- * for each cell, create array with all m*n=N possibilities,
- * pass on row, column and block, and erase from the array any non-zero value
- * encountered - those are illegal values for that cell.
- * might be common functionality with stacktracking.
- * fill those with  */
-int autofill(ARGS_DEF_FUNC){
-
-	return 0;
 }
 
 /*TODO -  */
-int reset(ARGS_DEF_FUNC){
+void num_solutions(ARGS_DEF_FUNC) {
 
-	return 0;
+}
+
+/*TODO -  */
+void autofill(ARGS_DEF_FUNC) {
+
+}
+
+/*TODO -  */
+void reset(ARGS_DEF_FUNC) {
+
 }
 
 /*TODO - is "exit" operation necessary?*/
 
 /*initialize function pointer array with NULL values*/
-f ops[NUM_OPS] = {&solve,&edit,&mark_errors,&print_board,&set,
-					&validate,&guess,&generate,&undo,&redo,
-					&save,&hint,&guess_hint,&num_solutions,
-					&autofill,&reset};
-
+f ops[NUM_OPS] = { &solve, &edit, &mark_errors, &print_board, &set, &validate,
+		&guess, &generate, &undo, &redo, &save, &hint, &guess_hint,
+		&num_solutions, &autofill, &reset };
 
 /* public function using the function array  */
-int user_op(ARGS_DEF_FUNC){
+void user_op(ARGS_DEF_FUNC) {
 
 	ops[flags[USER_COMMAND]](ARGS_PASS_FUNC);
 
-	return 0;
 }
