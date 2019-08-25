@@ -25,8 +25,8 @@
 # define END_OF_FILE 1
 # define FALSE 0
 # define TRUE 1
-# define ARGS_PASS_FUNC gptr,flags,strings
-# define ARGS_DEF_FUNC game *gptr,int *flags,char **strings
+# define ARGS_PASS_FUNC gptr,flags,strings,currentMove
+# define ARGS_DEF_FUNC game *gptr,int *flags,char **strings, node *currentMove
 
 
 /*								FLAGS ARRAY						*/

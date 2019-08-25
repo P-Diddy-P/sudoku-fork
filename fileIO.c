@@ -90,9 +90,10 @@ char* load_get_next_token(int *flags, FILE *fp) {
 	/* allocate initial memory for local string*/
 	loc_str = calloc(cursize, sizeof(char));
 
-	/* TODO - memory allocation error catch? */
-
-	/* TODO - memory allocation error catch? */
+	if (errno) {
+		printf("Error during game memory allocation.\n");
+		exit(errno);
+	}
 
 	/* get first char */
 	c = fgetc(fp);
@@ -104,7 +105,7 @@ char* load_get_next_token(int *flags, FILE *fp) {
 	while (!feof(fp)) {
 		loc_str[cursize - 1] = c;
 		cursize++;
-		loc_str = (char *) realloc(loc_str, cursize);
+		loc_str = realloc(loc_str, cursize);
 		c = fgetc(fp);
 		if (isspace(c)) {
 			ungetc(c, fp);
@@ -127,6 +128,7 @@ int load_is_str_zero(char *str) {
 
 	/* if one of the chars is not '0', return false*/
 	for (k = 0; k < str_len; k++) {
+
 		if (str[k] != 48) {
 			return 0;
 		}
@@ -273,6 +275,7 @@ int load_get_dimensions(FILE *fp, game *local_gptr, int *flags) {
 	char *rows_str = 0, *cols_str = 0;
 	int rows, cols;
 
+
 	/* advance first whitespaces */
 	load_advance_whitespace(flags, fp);
 
@@ -326,11 +329,12 @@ int load_get_dimensions(FILE *fp, game *local_gptr, int *flags) {
 	}
 
 	/* dimensions read succussfully, load them into the local game*/
+
+	printf("In load_board--load_get_dimensions\nrows=%d,cols=%d\n",rows,cols);
+
 	local_gptr->rows = rows;
 	local_gptr->cols = cols;
 	local_gptr->sideLength = rows * cols;
-	printf("Dimensions read, rows = %d, cols = %d, side length = %d\n", rows,
-			cols, local_gptr->sideLength);
 
 	return 1;
 
@@ -398,14 +402,15 @@ int load_open_file(FILE *fp, int *flags, char **strings) {
 
 /* Try to access file with path, read dimensions,
  * initialize board
- * TODO  - remove debugging prints*/
+ * */
 game* load_board(ARGS_DEF_FUNC) {
 	FILE *fp;
-	game local_game;
-	game *local_gptr;
+	game load_game;
+	game *load_gptr;
+
 
 	/* init local board pointer */
-	local_gptr = &local_game;
+	load_gptr = &load_game;
 
 	/* try to find file using path from user*/
 	fp = fopen(strings[PATH], "r");
@@ -416,17 +421,17 @@ game* load_board(ARGS_DEF_FUNC) {
 	}
 
 	/* try to read dimensions from file, return false if failed*/
-	if (!load_get_dimensions(fp, local_gptr, flags)) {
+	if (!load_get_dimensions(fp, load_gptr, flags)) {
 		return 0;
 	}
 
 	/* init board with dimensions read */
-	init_board(local_gptr, local_gptr->rows, local_gptr->cols);
+	init_board(load_gptr, load_gptr->rows, load_gptr->cols);
 
 	/* if successful, return pointer */
-	if (load_entries(local_gptr, fp, flags)) {
-		print_board2(local_gptr);
-		return local_gptr;
+	if (load_entries(load_gptr, fp, flags)) {
+
+		return load_gptr;
 	}
 
 	/* else, return null*/
@@ -458,12 +463,13 @@ char* save_get_str(int num) {
 	/* allocate chars to string*/
 	num_str = calloc(num_dig, sizeof(char));
 
-	/* TODO - memory allocation error catch? */
+	if (errno) {
+		printf("Error during game memory allocation.\n");
+		exit(errno);
+	}
 
 	/* write chars of number to string */
 	sprintf(num_str, "%d", num);
-
-	printf("Read string: '%s'\n", num_str);
 
 	/* return string */
 	return num_str;
@@ -502,9 +508,11 @@ void save_write_num(FILE *fp, game *gptr, int *flags, int i, int j) {
 
 	/* get write dot flag*/
 	if (flags[MODE] == MODE_EDIT) {
-		is_dot = 1;
+		/* if in EDIT mode, save every non-zero value with dot */
+		is_dot = (gptr->user[i][j] != 0 ? 1 : 0);
 	} else {
-		is_dot = gptr->flag[i][j];
+		/* if in solve mode, save every non-zero value with fixed flag*/
+		is_dot = (gptr->flag[i][j] == 1 ? 1 : 0);
 	}
 
 	/* write number*/
@@ -518,7 +526,6 @@ void save_write_num(FILE *fp, game *gptr, int *flags, int i, int j) {
 	/*  write a whitespace, even after last number in row
 	 * (that's the behavior of the provided executable) */
 	fputc(32, fp);
-
 
 }
 

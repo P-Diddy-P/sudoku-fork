@@ -16,5 +16,7 @@ game* load_board(ARGS_DEF_FUNC);
 
 int save_board(ARGS_DEF_FUNC);
 
+int load_is_str_zero(char *str);
+
 
 #endif /* FILEIO_H_ */

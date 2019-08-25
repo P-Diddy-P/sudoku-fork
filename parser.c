@@ -154,11 +154,12 @@ void parse_command_path(int* flags, char* token, char *strings[],
 	char *path;
 	int k = 0;
 
+
 	token = strtok(NULL, "\r\n");/*path could be token that ends in newline, not in tabs or ws*/
 	if ((is_optional) && (token == NULL)) {/*if edit an and no path given, return*/
-		strings[PATH] =  NULL;
+		strings[PATH] = NULL;
 		strings[USER_COMMAND_NAME] = EDIT_STR;
-		flags[USER_COMMAND] = EDIT_NO_PATH;
+		flags[USER_COMMAND] = EDIT;
 		return;
 	}
 
@@ -171,26 +172,33 @@ void parse_command_path(int* flags, char* token, char *strings[],
 	}
 
 	if (is_optional) {
-		flags[USER_COMMAND] = EDIT_WITH_PATH;
+		flags[USER_COMMAND] = EDIT;
 		strings[USER_COMMAND_NAME] = EDIT_STR;
 	}
 
 	/*allows for windows based paths
 	 * TODO - can remove when working on UNIX system only */
+
 	path = calloc(258, sizeof(char));
 
 	for (k = 0; k < 600; k++) {
 		if (token[k] == 0) {
 			break;
 		}
-		if (token[k] == 92) { /* switch backward slasg with forward*/
+		if (token[k] == 92) { /* switch backward slash with forward*/
 			path[k] = 47;
 		} else {
 			path[k] = token[k];
 		}
 	}
 
+	/* ignore whitespaces in the beginning*/
+	while(path[0]==32){
+		path+=1;
+	}
+
 	strings[PATH] = path;
+
 
 }
 
@@ -198,10 +206,17 @@ void parse_command_path(int* flags, char* token, char *strings[],
  * common strings array*/
 void parse_command_args(int* flags, char *strings[], char* token, int num_args) {
 	int k;
+	char *str;
 
 	/*no need to check for EOF (get_line resp*/
 	for (k = 1; k <= num_args; k++) {
 		token = strtok(NULL, DELIM);
+
+		/* Dynamically allocate space for string in strings array
+		 * TODO need to free after each user prompt the strings array*/
+		str = calloc(strlen(token),sizeof(char));
+
+		strcpy(str,token);
 
 		if (token == NULL) {/*not enough arguments*/
 			printf("Not enough arguments for command %s\n",
@@ -212,7 +227,7 @@ void parse_command_args(int* flags, char *strings[], char* token, int num_args) 
 
 		}
 
-		strings[k] = token; /* strore arguments in ARG1 (1), ARG2(2), ARG3(3)*/
+		strings[k] = str; /* store arguments in ARG1 (1), ARG2(2), ARG3(3)*/
 	}
 
 	token = strtok(NULL, DELIM);
@@ -257,6 +272,7 @@ void parse_line(char *line, int *flags, char* strings[]) {
 	}
 
 	else if ((strcmp(token, EDIT_STR)) == 0) {
+
 
 		parse_command_path(flags, token, strings, 1);
 		flags[MODE] = MODE_EDIT;
@@ -453,6 +469,7 @@ void parse_user(int *flags, char *strings[]) {
 	}
 
 	line = parse_get_line(flags, input);/*read line chars from stdin*/
+	/* TODO - check to change parse_get_line to void and remove input*/
 
 	if (flags[INVALID_LINE_LENGTH]) {
 		printf(

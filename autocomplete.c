@@ -4,6 +4,11 @@
 int find_single_valid_value(game *gptr, int row, int col) {
 	int k, validValue = 0;
 
+	/* if there's more than one valid value per cell,
+	 * return false. Implemented as loop on all possible values
+	 * in range, where the first one sets the validValue flags to
+	 * a non-zero value. if there's another one, the function returns
+	 * false */
 	for (k=1; k<=gptr->sideLength; k++) {
 		if (check_valid_value(gptr, row, col, k)) {
 			if (validValue) {
@@ -39,7 +44,6 @@ int iterative_auto_complete(game *gptr) {
 
 	while (auto_complete(gptr)) {
 		autocompleteRounds++;
-		print_board(gptr);
 	}
 
 	return autocompleteRounds;

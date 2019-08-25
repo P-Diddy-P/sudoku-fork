@@ -3,7 +3,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-
 /* Constant identifiers for fixed values and error values in the board */
 #define					VALID  0
 #define 				FIXED  1
@@ -22,7 +21,14 @@
  * mostly added for convenience purposes.
  *
  * ^(TODO consider changing member name to reflect on it's block nature)
+ *
+ *
+ * Changed: added currentMove pointer to game struct
  * */
+
+typedef struct node node;
+
+
 typedef struct game {
 
 	int rows;
@@ -34,14 +40,16 @@ typedef struct game {
 
 /* gameStruct.c functions */
 
-void copy_board(game *gptr, int **dstBoard, int toGame);
+void copy_board(game *gptr, int **dstBoard, int toGame,int isFixed);
 /* Copies the current user board to\from a two dimensional array. NOTE: dstBoard must be initialized
  * to the correct size before being used in this function. */
 
 void init_board(game * gptr, int rows, int cols);
-/* Initialize an empty game board and returns a pointer to it */
+/* Initialize an empty game board and returns a pointer to it
+ * NOTE - pointer passed to init_board must be already initialized.
+ * gptr pointing to null will result in undefined behavior */
 
-void print_board(game *gptr);
+void print_board_aux(game *gptr);
 /* Prints the game board, including error marks and fixed values */
 
 void update_board(game *gptr, int len, int *rowIds, int *colIds, int *values, int * flags);
@@ -83,5 +91,26 @@ int find_next_empty_cell(game *gptr, int *rowAddress, int *colAddress);
  * Note that the search is inclusive, i.e. if
  * gptr->[*rowAddress][*colAddress] == 0, then the given addresses will not change value.
  */
+
+
+/* ADDED FUNCTION - free_game_pointer, freeing the dynamically allocated space
+ * for a game instance*/
+/* Free game pointer
+ * TODO maybe move to other module like gamestruct */
+void free_game_pointer(game *gptr);
+
+
+/* Iterates over board and returns true if a zero valued
+ * cell found*/
+int is_board_full(game *gptr);
+
+/* Functions for allocation and freeing memory of a 2D array of ints*/
+void free_2d_array(int **mat,int sideLength);
+
+int** init_2d_array(int sideLength);
+
+void print_board_matrix(int **mat, int cols, int rows, int sideLength);
+
+void assign_game_pointer(game **gptr,game *assign);
 
 #endif /* GAMESTRUCT_H_ */

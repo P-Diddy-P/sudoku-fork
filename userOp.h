@@ -14,7 +14,9 @@
 /*one public function user_op, recieves the game and user command
  * and operates upon the game*/
 
-int user_op(game * gptr,int *flags, char *strings[]);
+int user_op(game *gptr,int *flags,char **strings, node *currentMove);
 
+
+void print_art();
 
 #endif /* USEROP_H_ */
