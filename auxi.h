@@ -26,7 +26,7 @@
 # define FALSE 0
 # define TRUE 1
 # define ARGS_PASS_FUNC gptr,flags,strings,currentMove
-# define ARGS_DEF_FUNC game *gptr,int *flags,char **strings, node *currentMove
+# define ARGS_DEF_FUNC game *gptr,int *flags,char **strings, node **currentMove
 
 
 /*								FLAGS ARRAY						*/
@@ -51,25 +51,25 @@
 
 # define USER_COMMAND 5 /*name of command*/
 
-	# define SOLVE 0
-	# define EDIT 1
-	# define MARK_ERRORS 2
-	# define PRINT_BOARD 3
-	# define SET 4
-	# define VALIDATE 5
-	# define GUESS 6
-	# define GENERATE 7
-	# define UNDO 8
-	# define REDO 9
-	# define SAVE 10
-	# define HINT 11
-	# define GUESS_HINT 12
-	# define NUM_SOLUTIONS 13
-	# define AUTOFILL 14
-	# define RESET 15
-	# define EXIT 16
-	# define EDIT_NO_PATH 17
-	# define EDIT_WITH_PATH 18
+	# define SOLVE 1
+	# define EDIT 2
+	# define MARK_ERRORS 3
+	# define PRINT_BOARD 4
+	# define SET 5
+	# define VALIDATE 6
+	# define GUESS 7
+	# define GENERATE 8
+	# define UNDO 9
+	# define REDO 10
+	# define SAVE 11
+	# define HINT 12
+	# define GUESS_HINT 13
+	# define NUM_SOLUTIONS 14
+	# define AUTOFILL 15
+	# define RESET 16
+	# define EXIT 17
+	# define EDIT_NO_PATH 18
+	# define EDIT_WITH_PATH 19
 
 # define INVALID_USER_COMMAND 6
 
@@ -78,6 +78,20 @@
 # define LOAD_IS_INVALID_FORMAT 7
 
 # define LOAD_IS_EOF 8
+
+# define MARK_ERRORS_FLAG 9
+
+
+/* in each iteration of parsing user input,
+ * values in flags array need to be nullified
+ * preparing for the next command from the user.
+ * thus, a continuous range in the
+ * flags array is used for representing the
+ * user commands and if their valid */
+
+# define NULLIFY_START 3
+# define NULLIFY_END 8
+
 
 
 
@@ -124,14 +138,10 @@
 # define PATH 4 /* cell for storing path string TODO - need to be freed upon exit*/
 
 
-/* in each iteration of parsing user input,
- * values in flags array need to be nullified
- * preparing for the next command from the user.
- * thus, a continuous range in the
- * flags array is used for representing the
- * user commands and if their valid */
 
-# define NULLIFY_START 3
-# define NULLIFY_END 8
+
+/*								OTHER						*/
+# define NO_FILE 2
+
 
 #endif /* AUXI_H_ */

@@ -27,9 +27,10 @@
 
 /* every operation-function receives as arguments the game pointer, flags int array,
  * strings array and currentMove pointer */
-# define NUM_OPS 16
+# define NUM_OPS 17
 
-typedef void (*f)(game*, int*, char**, node*);
+/* Every operation receives as arguments gptr, flags, strings and pointer to current node*/
+typedef void (*f)(game*, int*, char**, node**);
 
 /* ----------------------------------------
  * ----------------------------------------
@@ -49,10 +50,8 @@ typedef void (*f)(game*, int*, char**, node*);
  * functions, which seemed like more work than changing the
  * "copy_board" function */
 int is_fixed_erroneous(game *gptr) {
-	int i, j;
-	/* initialize local board */
-	printf("In is_fixed_erro: rows,cols=%d, %d\n", gptr->rows, gptr->cols);
 
+	/* initialize local board */
 	game local_copy;
 	game *local_copy_gptr;
 	local_copy_gptr = &local_copy;
@@ -66,20 +65,18 @@ int is_fixed_erroneous(game *gptr) {
 	update_board_errors(local_copy_gptr);
 
 	/* if there's a fixed and erroneous cell, return true*/
-	for (i = 0; i < gptr->sideLength; i++) {
-		for (j = 0; j < gptr->sideLength; j++) {
-			if (local_copy_gptr->flag[i][j] == ERROR) {
-				free_game_pointer(local_copy_gptr);
-				return 1;
-			}
-		}
+	if (board_has_errors(local_copy_gptr)) {
+		free_game_pointer(local_copy_gptr);
+		return 1;
 	}
-	free_game_pointer(local_copy_gptr);
+
 	/* return false otherwise */
+	free_game_pointer(local_copy_gptr);
 	return 0;
 
 }
 
+/* Helper function to pring X, Y or Z in error messages */
 char* print_arg_name(int arg) {
 	if (arg == 1) {
 		return "X";
@@ -116,46 +113,30 @@ int get_int_from_str(ARGS_DEF_FUNC, int arg) {
 			print_arg_name(arg), strings[USER_COMMAND_NAME]);
 
 	flags[INVALID_USER_COMMAND] = 1;
-	return -1;
+	return NULL;
 
 }
 
 /* Frees all nodes currently in list, including current one
- * commit first node in list with new board*/
-void init_new_undoRedo(game *gptr, node *currentNode, int *flags) {
+ * commit first node in list with new board
+ * To be used in Edit X and Solve X ops */
+void init_new_undoRedo(game *gptr, node **current, int *flags) {
+
 	/* free all nodes after and before current node */
+	terminate_all(*current);
 
-	printf("In init_new_undoRedo\n");
+	/* set current as NULL pointer - TODO check */
+	(*current) = NULL;
 
-	/* if first time initialization (for example, first move is edit X or solve X),
-	 * create first node in list */
-	if (currentNode == NULL) {
-		printf("CurrentNode is NULL\nInitiating...\n");
-		printf("dimensions: %d\n", gptr->sideLength);
-		commit_move(currentNode, gptr, NULL, flags);
-		return;
+	/* commit move - create list with new node
+	 * currentMove now points to newly created node */
+	commit_move(current, gptr, flags, 1);
+
+	/* TODO remove safeguard at end */
+	if ((*current) == NULL) {
+		printf("ERROR, (*current) IS NULL, EXITING...\n");
+		exit(0);
 	}
-
-	/* else, there's already a node or a list. terminate the entire list, set currentMove to NULL
-	 * (TODO maybe need to pass pointer to currentMove to init_new_undoRedo?) and commit new board to list*/
-	printf("Current node: %p, next:%p, previous: %p\n", currentNode,
-			currentNode->next, currentNode->prev);
-
-	terminate_all(currentNode);
-	currentNode = NULL;
-
-	/* currentMove now points to newly created node */
-	commit_move(currentNode, gptr, NULL, flags);
-}
-
-/* Commits new moves performed on board on list
- * frees the snapshot */
-void commit_and_free_old(game *gptr, node *currentMove, int **old_board,
-		int *flags) {
-
-	commit_move(currentMove, gptr, old_board, flags);
-
-	free_2d_array(old_board, gptr->sideLength);
 
 }
 
@@ -172,41 +153,45 @@ void commit_and_free_old(game *gptr, node *currentMove, int **old_board,
 void solve(ARGS_DEF_FUNC) {
 
 	/* init local game pointer and try to load board */
+	game local_game;
 	game *local_gptr;
-	local_gptr = load_board(ARGS_PASS_FUNC);
+	local_gptr = &local_game;
+	load_board(local_gptr, flags, strings, currentMove);
 
 	/* if board loading failed, return */
-	if (local_gptr == 0) {
-		flags[INVALID_USER_COMMAND] = 1;
+	if (flags[INVALID_USER_COMMAND]) {
 		return;
 	}
 
 	/* if loading successful */
-
 	/* check if fixed cells in loaded board are erroneous.
 	 * if they are, return error and free board memory
 	 * TODO - need to do? can you load an erroneous board
 	 * in solve mode?*/
 	if (is_fixed_erroneous(local_gptr)) {
 		/* if true, free locally allocated game pointer and return error */
-		printf("Error, loaded board contains erroneous fixed cells.\n");
+		printf("Error, loaded board contains erroneous fixed cells\n");
 		free_game_pointer(local_gptr);
 		flags[INVALID_USER_COMMAND] = 1;
 		return;
 	}
 
-	/* (no need to check if solvable? TODO) */
+	/* (need to check if solvable? TODO) */
 
-	/* if board is valid and not erroneous, free old gptr memory and plug new
-	 * board to gptr */
+	/* if board is valid and not erroneous, free old gptr memory and copy new
+	 * data from loaded game */
 	free_game_pointer(gptr);
-	assign_game_pointer(&gptr, local_gptr);
+	assign_game_pointer(gptr, local_gptr);
+
+	/* set mode - BEFORE creating new list -
+	 * otherwise the first node is recorded with mode flag zero */
+	flags[MODE] = MODE_SOLVE;
 
 	/* initialize new empty undoRedo list with new board */
 	init_new_undoRedo(gptr, currentMove, flags);
 
-	/* print board*/
-	print_board_aux(gptr);
+	/* print board after operation - TODO need to?*/
+	print_board_aux(gptr, flags);
 
 }
 
@@ -214,94 +199,59 @@ void solve(ARGS_DEF_FUNC) {
 
 /* Edit operation -
  * if no path provided, load new empty 9X9 board
- * else load board if not erroneous */
+ * else load board from file, if exists and not erroneous */
 void edit(ARGS_DEF_FUNC) {
-
+	/* create local game for loading from file and testing */
+	game local_game;
 	game *local_gptr;
+	local_gptr = &local_game;
 
-	printf("Edit\n");
 	/* if edit with no path, free current board init with empty 9X9 board*/
 	if ((flags[USER_COMMAND] == EDIT) && (strings[PATH] == NULL)) {
-		printf("Edit with no path\n");
 		free_game_pointer(gptr);
-		printf("gptr freed\n");
 		init_board(gptr, 3, 3);
 	}
 
 	/* if path provided */
 	else {
-		printf("Edit with path\nLoading board...\n");
-
 		/* create local board with loaded board */
-		local_gptr = load_board(gptr, flags, strings, currentMove);
-
-		printf(
-				"\nAfter load_board: Local_gptr dimensions: %d, row,col=%d,%d gptr dimensions: %d\n",
-				local_gptr->sideLength, local_gptr->cols, local_gptr->rows,
-				gptr->sideLength);
-
-		printf(
-				"JUST ANOTHER PRINT: Local_gptr dimensions: %d, row,col=%d,%d gptr dimensions: %d\n\n",
-				local_gptr->sideLength, local_gptr->rows, local_gptr->cols,
-				gptr->sideLength);
+		load_board(local_gptr, flags, strings, currentMove);
 
 		/* if loading failed, return error */
-		if (local_gptr == 0) {
-			printf("edit - loading failed\n");
-			flags[INVALID_USER_COMMAND] = 1;
+		if (flags[INVALID_USER_COMMAND]) {
 			return;
 		}
 
 		/* check if fixed cells in loaded board are erroneous.
 		 * if they are, return error and free board memory */
-
 		if (is_fixed_erroneous(local_gptr)) {
-			/* if true, free locally allocated game pointer and return error */
 			printf("Error, loaded board contains erroneous fixed cells.\n");
 			free_game_pointer(local_gptr);
 			flags[INVALID_USER_COMMAND] = 1;
 			return;
 		}
-		/**/
-		printf(
-				"After is_fixed_erro: Local_gptr dimensions: %d, gptr dimensions: %d\n",
-				local_gptr->sideLength, gptr->sideLength);
-
-		/* TODO need to check if board is solvable? */
-
-		/* if board is valid and not erroneous, free old gptr memory and plug new
-		 * board to gptr */
-		printf(
-				"Before free_game_pointer: Local_gptr dimensions: %d, gptr dimensions: %d\n",
-				local_gptr->sideLength, gptr->sideLength);
-
+		/* if board is valid and not erroneous, free old gptr memory and plug
+		 * newly loded board to gptr */
 		free_game_pointer(gptr);
-
-		printf(
-				"After free game pointer: Local_gptr dimensions: %d, gptr dimensions: %d\n",
-				local_gptr->sideLength, gptr->sideLength);
-
-		assign_game_pointer(&gptr, local_gptr);
-		printf(
-				"Aftter assign: Local_gptr dimensions: %d, gptr dimensions: %d\n",
-				local_gptr->sideLength, gptr->sideLength);
+		assign_game_pointer(gptr, local_gptr);/* TODO - discuss - do we want to change the structure
+		 so gptr will be a double pointer (**gptr), so the value of (*gptr) will be */
 
 	}
 
-	printf("Init new undoRedo list...\n");
-	/* initialize new empty undoRedo list with new board */
-	printf("dimensions: %d\n", gptr->sideLength);
-	init_new_undoRedo(gptr, currentMove, flags);
-	printf("new undoRedo list assigned\n");
+	/* set mode - BEFORE creating new list -
+	 * otherwise the first node is recorded with mode flag zero */
+	flags[MODE] = MODE_EDIT;
 
+	/* initialize new empty undoRedo list with new board */
+	init_new_undoRedo(gptr, currentMove, flags);
+
+	update_board_errors(gptr);/* TODO - need?*/
 }
 
 /*------------Mark errors----------*/
 /* TODO changing the mark_errors bit */
 void mark_errors(ARGS_DEF_FUNC) {
 	int val;
-	/*TODO need a parse_int function, to be called on ARGS
-	 * need to return some error message according to hirarchy*/
 
 	/* try to read first argument as int */
 	val = get_int_from_str(ARGS_PASS_FUNC, 1);
@@ -313,7 +263,7 @@ void mark_errors(ARGS_DEF_FUNC) {
 
 	/* check if 0 or 1 */
 
-	if ((val != 0) || (val != 1)) {
+	if ((val != 0) && (val != 1)) {
 		printf("Error, command 'mark errors' receives 0 or 1 as argument\n");
 		flags[INVALID_USER_COMMAND] = 1;
 		return;
@@ -322,14 +272,16 @@ void mark_errors(ARGS_DEF_FUNC) {
 	/* TODO when does errors are updated? */
 
 	if (val == 1) {
-		flags[MARK_ERRORS] = 1;
+		update_board_errors(gptr);/* TODO need to update here?*/
+		flags[MARK_ERRORS_FLAG] = 1;
 	}
 
 	if (val == 0) {
-		flags[MARK_ERRORS] = 0;
+		flags[MARK_ERRORS_FLAG] = 0;
 	}
 
-	/* TODO undoRedo functionality?*/
+	/* TODO undoRedo functionality? need to change flags only*/
+	commit_move(currentMove, gptr, flags, 0);
 
 }
 
@@ -337,15 +289,15 @@ void mark_errors(ARGS_DEF_FUNC) {
 
 /* Calls print board from gameStruct */
 void print_board(ARGS_DEF_FUNC) {
-	print_board_aux(gptr);
+	print_board_aux(gptr, flags);
 }
 
 /*------------Set-----------------*/
 
-int set_val_range(int arg, int argind, game *gptr) {
-	if ((arg < 0) || (arg > gptr->sideLength)) {
-		printf("Error, argument %s range is 0<=%s<=%d", print_arg_name(argind),
-				print_arg_name(argind), gptr->sideLength);
+int set_val_range(int arg, int argind, int lower, int upper) {
+	if ((arg < lower) || (arg > upper)) {
+		printf("Error, argument %s range is %d<=%s<=%d\n",
+				print_arg_name(argind), lower, print_arg_name(argind), upper);
 		return 0;
 	}
 	return 1;
@@ -356,17 +308,30 @@ int set_check(int *col, int *row, int *val, ARGS_DEF_FUNC) {
 	/* parse and check arguments, return if invalid
 	 * error messages are printed from functions */
 	*col = get_int_from_str(ARGS_PASS_FUNC, 1);
-	if ((*col == -1) || !set_val_range(*col, 1, gptr)) {
+	if (flags[INVALID_USER_COMMAND]) {
+		return 0;
+	}
+
+	if (!set_val_range(*col, 1, 1, gptr->sideLength)) {
 		flags[INVALID_USER_COMMAND] = 1;
 		return 0;
 	}
+
 	*row = get_int_from_str(ARGS_PASS_FUNC, 2);
-	if ((*row == -1) || !set_val_range(*col, 2, gptr)) {
+	if (flags[INVALID_USER_COMMAND]) {
+		return 0;
+	}
+
+	if (!set_val_range(*row, 2, 1, gptr->sideLength)) {
 		flags[INVALID_USER_COMMAND] = 1;
 		return 0;
 	}
 	*val = get_int_from_str(ARGS_PASS_FUNC, 3);
-	if ((*val == -1) || !set_val_range(*col, 3, gptr)) {
+
+	if (flags[INVALID_USER_COMMAND]) {
+		return 0;
+	}
+	if (!set_val_range(*val, 3, 0, gptr->sideLength)) {
 		flags[INVALID_USER_COMMAND] = 1;
 		return 0;
 	}
@@ -378,7 +343,6 @@ void set(ARGS_DEF_FUNC) {
 
 	/* init ints to get, pass pointers to parsing and range check */
 	int col, row, val;
-	int **old_board = NULL;
 
 	/* if error in set values or range, return on error */
 	if (!set_check(&col, &row, &val, ARGS_PASS_FUNC)) {
@@ -387,34 +351,35 @@ void set(ARGS_DEF_FUNC) {
 	}
 
 	/* if fixed in solve mode, return on error*/
-	if ((gptr->flag[row][col] == FIXED) && (flags[MODE] == MODE_SOLVE)) {
+	if ((gptr->flag[row - 1][col - 1] == FIXED)
+			&& (flags[MODE] == MODE_SOLVE)) {
 		printf("Cannot update a fixed cell in solve mode\n");
 		flags[INVALID_USER_COMMAND] = 1;
 		return;
 
 	}
 
-	/* create snapshot before operation */
-	old_board = init_2d_array(gptr->sideLength);
-	copy_board(gptr, old_board, 0, 0);
-
 	/* set value at X=col, Y=row, if not fixed or in edit mode*/
-
 	gptr->user[row - 1][col - 1] = val;
 
-	/* print board after operation */
-	print_board_aux(gptr);
 
-	/* if it is the last cell to be filled
+	update_board_errors(gptr);
+
+	/* TODO  - create function
+	 * if it is the last cell to be filled
 	 * check for errors
 	 */
 	if (is_board_full(gptr)) {
 		/* update errors - TODO - maybe check for errors without updating? */
-		update_board_errors(gptr);
 		/* if board doesn't have any errors, the board is solved */
 		if (!board_has_errors(gptr)) {
 			flags[IS_SOLVED] = 1;
-			printf("Puzzle was solved successfully!\n");
+			print_board_aux(gptr, flags);
+			printf("Puzzle was solved successfully!\nMode is Now Init\n");
+
+			/* set mode to init */
+			flags[MODE] = MODE_INIT;
+
 			return;
 			/* TODO - outer logic sees IS_SOLVED flag and operates?
 			 * change back to INIT mode?*/
@@ -426,8 +391,12 @@ void set(ARGS_DEF_FUNC) {
 		printf("Board is full but erroneous\n");
 	}
 
+
+	/* print board after operation */
+		print_board_aux(gptr, flags);
+
 	/* commit move to list with old board */
-	commit_and_free_old(gptr, currentMove, old_board, flags);
+	commit_move(currentMove, gptr, flags, 0);
 }
 
 /*------------Validate-----------------*/
@@ -465,16 +434,11 @@ double get_float_from_str(ARGS_DEF_FUNC, int arg) {
 
 /*TODO - */
 void guess(ARGS_DEF_FUNC) {
-	int **old_board = NULL;
-
-	/* create snapshot before operation */
-	old_board = init_2d_array(gptr->sideLength);
-	copy_board(gptr, old_board, 0, 0);
 
 	/* TODO implement*/
 
 	/* commit move to list with old board */
-	commit_and_free_old(gptr, currentMove, old_board, flags);
+	commit_move(currentMove, gptr, flags, 0);
 
 }
 
@@ -489,8 +453,13 @@ void generate(ARGS_DEF_FUNC) {
 
 /* Goes back one step in list, if exists */
 void undo(ARGS_DEF_FUNC) {
-	printf("In undo\n");
+	/* call undoRedo */
 	undoRedo(gptr, currentMove, flags, 1);
+
+	/* print board if undo called */
+	if (!flags[INVALID_USER_COMMAND]) {
+		print_board_aux(gptr, flags);
+	}
 
 }
 
@@ -498,7 +467,13 @@ void undo(ARGS_DEF_FUNC) {
 
 /* Goes forward one step in list, if exists */
 void redo(ARGS_DEF_FUNC) {
+	/* call undoRedo */
 	undoRedo(gptr, currentMove, flags, 0);
+
+	/* print board if undo called */
+	if (!flags[INVALID_USER_COMMAND]) {
+		print_board_aux(gptr, flags);
+	}
 
 }
 
@@ -534,9 +509,7 @@ void save(ARGS_DEF_FUNC) {
 	}
 
 	/* if in solve mode, save board */
-
 	save_board(ARGS_PASS_FUNC);
-	return;
 
 }
 
@@ -551,16 +524,8 @@ void hint(ARGS_DEF_FUNC) {
 
 /*TODO -  */
 void guess_hint(ARGS_DEF_FUNC) {
-	int **old_board = NULL;
-
-	/* create snapshot before operation */
-	old_board = init_2d_array(gptr->sideLength);
-	copy_board(gptr, old_board, 0, 0);
 
 	/* TODO implement*/
-
-	/* commit move to list with old board */
-	commit_and_free_old(gptr, currentMove, old_board, flags);
 
 }
 
@@ -576,46 +541,65 @@ void num_solutions(ARGS_DEF_FUNC) {
 
 /* Using autocomplete module, fill all obvious cells  */
 void autofill(ARGS_DEF_FUNC) {
-	int **old_board = NULL;
+	/* update board errors*/
+	update_board_errors(gptr);
+
+	/* check if board is erroneous */
 	if (board_has_errors(gptr)) {
 		printf("Error, cannot run autofill on an erroneous board\n");
 		flags[INVALID_USER_COMMAND] = 1;
 		return;
 	}
 
-	/* create snapshot before operation */
-	old_board = init_2d_array(gptr->sideLength);
-	copy_board(gptr, old_board, 0, 0);
+
 
 	/* run autocomplete on board*/
 	iterative_auto_complete(gptr);
 
+	/*TODO - add solution and game
+	 * end mechanism like set
+	 * Create new helper function for
+	 * autofill, set and guess*/
+
 	/* commit move to list with old board */
-	commit_and_free_old(gptr, currentMove, old_board, flags);
+	commit_move(currentMove, gptr, flags, 0);
 }
 
 /*------------Reset-----------------*/
 
-/* While there are previous moves to be undone, call undo */
+/* While there are previous moves to be undone, call undoRedo
+ * directly from undoRedo module, because undo from userOp
+ * also prints the board after undo */
 void reset(ARGS_DEF_FUNC) {
-	while (currentMove->prev != NULL) {
-		undo(ARGS_PASS_FUNC);
+	while ((*currentMove)->prev != NULL) {
+		undoRedo(gptr, currentMove, flags, 1);
 	}
 
 }
 
-/*TODO - is "exit" operation necessary?*/
+void Exit(ARGS_DEF_FUNC) {
+	printf("Exiting game...\n");
+	terminate_all(*currentMove);
+	free_game_pointer(gptr);
+
+}
 
 /*------------Function pointer array-----------------*/
 /*initialize function pointer array with NULL values*/
 f ops[NUM_OPS] = { &solve, &edit, &mark_errors, &print_board, &set, &validate,
 		&guess, &generate, &undo, &redo, &save, &hint, &guess_hint,
-		&num_solutions, &autofill, &reset };
+		&num_solutions, &autofill, &reset, &Exit };
 
 /* public function using the function array  */
 void user_op(ARGS_DEF_FUNC) {
 
-	ops[flags[USER_COMMAND]](ARGS_PASS_FUNC);
+	if (flags[BLANK_ROW] || flags[INVALID_USER_COMMAND]) {
+		return;
+	}
+
+	/* USER_COMMAND macro shifted +1,
+	 * call command -1 from ops function array */
+	ops[flags[USER_COMMAND] - 1](ARGS_PASS_FUNC);
 
 }
 

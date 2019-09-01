@@ -49,7 +49,7 @@ void init_board(game * gptr, int rows, int cols);
  * NOTE - pointer passed to init_board must be already initialized.
  * gptr pointing to null will result in undefined behavior */
 
-void print_board_aux(game *gptr);
+void print_board_aux(game *gptr, int *flags);
 /* Prints the game board, including error marks and fixed values */
 
 void update_board(game *gptr, int len, int *rowIds, int *colIds, int *values, int * flags);
@@ -109,8 +109,15 @@ void free_2d_array(int **mat,int sideLength);
 
 int** init_2d_array(int sideLength);
 
-void print_board_matrix(int **mat, int cols, int rows, int sideLength);
+/* TODO - for debugging purposes, delete in the end */
+void print_matrix(int **mat, int sideLength);
 
-void assign_game_pointer(game **gptr,game *assign);
+void copy_1d_array(int *copy_to, int*copy_from, int num_elements);
+void copy_2d_array(int **copy_to, int **copy_from, int side);
+void assign_game_pointer(game *gptr,game *assign);
+
+
+
+
 
 #endif /* GAMESTRUCT_H_ */

@@ -11,8 +11,8 @@
 # include "auxi.h"
 # include "gameStruct.h"
 
-
-game* load_board(ARGS_DEF_FUNC);
+/* CHANGED - load_board now gets */
+void load_board(game *local_gptr,int *flags,char **strings, node **currentMove);
 
 int save_board(ARGS_DEF_FUNC);
 

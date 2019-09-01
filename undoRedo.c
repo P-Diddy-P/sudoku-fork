@@ -1,282 +1,218 @@
 #include "undoRedo.h"
 #include "auxi.h"
 
-void copy_1d_array(int *copy_to, int*copy_from, int num_elements) {
-	int i;
-
-	for (i = 0; i < num_elements; i++) {
-		copy_to[i] = copy_from[i];
-	}
-
-}
-
+/* frees the pointer allocated for the struct - flag and nodeBoard,
+ * and the node itself. assumes node allocated,
+ * TODO - what error should be returned? */
 void free_node(node *delNode) {
-	int i;
 
-	printf("In free_node\n");
-
-
-	if (delNode==NULL){
+	if (!delNode) {
 		printf("ERROR, DELNODE IS NULL! EXITING...\n");
 		exit(0);
 	}
-
+	/* free flag array and nodeBoard */
 	free(delNode->flagArray);
-	printf("flagArray freed\n");
-	for (i = 0; i < delNode->changeLength; i++) {
-		free(delNode->changes[i]);
-		printf("change %d freed\n",i);
-	}
-	free(delNode->changes);
-	printf("changes freed\n");
+	free_2d_array(delNode->nodeBoard, delNode->sideLength);
+	/* free node */
 	free(delNode);
 }
 
-void terminate(node *currentNode) {
-	printf("Terminating forward...\n");
-
+/* terminating nodes from current node forward, until the
+ * last node. while loop breaks when current is NULL*/
+void terminate(node *current) {
 	node *nextNode;
 
-	while (currentNode != NULL) {
-
-		nextNode = currentNode->next;
-		printf("freeing node: %p => %d\n", currentNode,
-				currentNode->wholeBoard);
-
-		printf("Before free node\n");
-
-		free_node(currentNode);
-		currentNode = nextNode;
+	/* while current is not NULL - if last node
+	 * it's next will be NULL, terminating*/
+	while (current) {
+		nextNode = current->next;
+		free_node(current);
+		current = nextNode;
 	}
 }
 
-/* Free all nodes from current node and backwards */
-void terminate_back(node *currentNode) {
-	printf("Terminating forward...\n");
-
-	node *prevNode;
-
-	while (currentNode != NULL) {
-
-		prevNode = currentNode->prev;
-		printf("freeing node: %p => %d\n", currentNode,
-				currentNode->wholeBoard);
-		free_node(currentNode);
-		currentNode = prevNode;
+/* termination of the entire list
+ * first current is reverted to first node in list,
+ * and then terminating until the last node */
+void terminate_all(node *current) {
+	/*if current not initialized - first move like edit or solve -
+	 * then return without doing nothing */
+	if (!current) {
+		return;
 	}
+
+	/* revert back to first node, and then terminate forward*/
+
+	while (current->prev != NULL) {
+		current = current->prev;
+	}
+
+	/* after reverting to first node in list, terminate all nodes with forward */
+	terminate(current);
 }
 
-void terminate_all(node *currentNode) {
-	printf("Terminating all\n");
+/* allocate new node with required data
+ * isFirst is used to determine if forward termination is required
+ * lastly, current is derefed and assigned the address
+ * of the newly created node */
+void append(node **current, int **nodeBoard, int *flags, int isFirst,
+		int sideLength) {
+	/* allocate space for node */
+	node *newNode = calloc(1, sizeof(node));
 
-	terminate(currentNode);
-	terminate_back(currentNode);
-	free_node(currentNode);
-}
+	/* allocate space for flag array ad copy flags array */
+	newNode->flagArray = calloc(NUM_FLAGS, sizeof(int));
+	copy_1d_array(newNode->flagArray, flags, NUM_FLAGS);
 
-void append(node **current, int *flags, int wbFlag, int **data, int cl) {
-	printf("In append\n");
+	/* set nodeBoard*/
+	newNode->nodeBoard = nodeBoard;
+	/* set previous of new node as current, and next as NULL.
+	 * this way, the previous pointer of the first node in an
+	 * undoRedo list points to itself, and the next pointer of
+	 * the last node points to NULL */
 
-	node *newNode = malloc(sizeof(node));
-	newNode->flagArray = calloc(NUM_FLAGS,sizeof(int));
-	copy_1d_array(newNode->flagArray,flags,NUM_FLAGS);
-	newNode->wholeBoard = wbFlag;
-	newNode->changes = data;
-	newNode->changeLength = cl;
+	if (isFirst) {
+		newNode->prev = NULL;
+	} else {
+		newNode->prev = (*current);
+	}
 
-	newNode->prev = (*current);
 	newNode->next = NULL;
 
-	printf("New node allocated\n");
-
-	if ((*current) != NULL) {
+	/* terminate nodes from current forward (exclusive),
+	 * set current next as newNode*/
+	if (!isFirst) {
 		if ((*current)->next != NULL) {
-			printf("Terminating next nodes...\n");
 			terminate((*current)->next);
 		}
-		printf("Setting next node\n");
 		(*current)->next = newNode;
-		printf("Next node set\n");
 	}
-
-	printf("First node in list\n");
 
 	*current = newNode;
 
 }
 
-void apply_changes(game *gptr, int **changes, int changesLength, int undo) {
-	int i;
+/* Reverts game pointer and flags to previous state, updates
+ * current node to new node */
+void undoRedo(game *gptr, node **current, int *flags, int undo) {
 
-	/* for every change in the list, copy to current board the old value if it's a undo
-	 * or the "new" value, if it's a redo */
-	for (i = 0; i < changesLength; i++) {
-		gptr->user[changes[i][0]][changes[i][1]] = (
-				undo ? changes[i][2] : changes[i][3]);
-	}
-}
-
-/* Reverts game pointer and flags to previous state in case of*/
-void undoRedo(game *gptr, node *currentMove, int *flags, int undo) {
-
-	printf("In undoRedo, op is %s\n", (undo ? "undo" : "redo"));
-
-	/* local node that will hold currentMove.next if redo
-	 * xor currentMove.prev if undo */
+	/* local node that will hold current.  if redo
+	 * xor current.prev if undo */
 	node *local_node;
 
 	/* if undo and no previous move or redo and no next, return error*/
-	if ((!undo && currentMove->next == NULL)
-			|| (undo && currentMove->prev == NULL)) {
-		printf("Error, cannot %s move, no %s move available\n",
-				(undo ? "undo" : "redo"), (undo ? "previous" : "next"));
+	if ((!undo && (*current)->next == NULL)
+			|| (undo && (*current)->prev == NULL)) {
+		printf("Error, no move available to %s\n",
+				(undo ? "undo" : "redo"));
 		flags[INVALID_USER_COMMAND] = 1;
 		return;
 	}
 
 	if (undo) {
-		local_node = currentMove->prev;
+		local_node = (*current)->prev;
 	} else {
-		local_node = currentMove->next;
+		local_node = (*current)->next;
 	}
 
-	/* if next/prev node is a whole board node, copy values from board saved in board.
-	 * why not freeing current user board: suppose there's a undo with whole board, and then
-	 * another with changes, and then a move is done, deleting the redo moves.
-	 * then the pointer which now serves as gptr->user will be freed, causing an error */
-	if (local_node->wholeBoard) {
-		printf("Copying board...\n");
-		copy_board(gptr, local_node->changes, 1, 0);
-	}
-	/* if not whole board, call apply_changes function*/
-	else {
-		printf("Applying changes...\n");
-		apply_changes(gptr, local_node->changes, local_node->changeLength, 1);
-	}
-	/* copy flags*/
+	/* copy board - TODO what about flag board?
+	 * maybe update errors after allocation */
+	copy_board(gptr, local_node->nodeBoard, 1, 0);
+
+	/* copy flags */
 	copy_1d_array(flags, local_node->flagArray, NUM_FLAGS);
 
-	/*TODO what about flag board in gptr? do the flags need to be copied as well?*/
-
-	/* currentMove pointer now points to previous move*/
-	currentMove = local_node;
+	/* current pointer now points to previous move*/
+	*current = local_node;
 
 }
 
-void commit_move(node *currentNode, game *gptr, int **oldBoard, int *flags) {
-	int i, j, k, countDiff = 0;
+/* allocate new nodeBoard from recently changed board
+ * append new node with recent data */
+void commit_move(node **current, game *gptr, int *flags, int isFirst) {
 	int **nodeBoard = NULL;
 
-	printf("In commit move\n");
+	/* init nodeBoard (always)*/
+	nodeBoard = init_2d_array(gptr->sideLength);
 
-	printf("dimensions: %d\n",gptr->sideLength);
+	/* copy entire board for node, and append new node
+	 * TODO what about flags board? */
+	copy_board(gptr, nodeBoard, 0, 0);
 
-	if (oldBoard == NULL) {
-		printf("Old board is NULL\n");
-		/* Special case: if this is the first move and there is no old board,
-		 * always copy the whole board */
-		printf("Allocating space for nodeBoard\n");
-		nodeBoard = init_2d_array(gptr->sideLength);
-		printf("Space allocated.\nCopying board...\n");
-		copy_board(gptr, nodeBoard, 0, 0);
-		printf("Board copied\nAppending to list...\n");
-		append(&currentNode, flags, 1, nodeBoard, gptr->sideLength);
-		printf("Appended\n");
-		/* TODO possible bug with changeLength argument, shoudln't be sideLength^2?*/
-		return;
-	}
+	/* append new node to list */
+	append(current, nodeBoard, flags, isFirst, gptr->sideLength);
 
-
-
-	for (i = 0; i < gptr->sideLength; i++) {
-		for (j = 0; j < gptr->sideLength; j++) {
-			if (gptr->user[i][j] != oldBoard[i][j]) {
-				countDiff++;
-			}
-		}
-	}
-
-	if (countDiff * 4 > gptr->sideLength * gptr->sideLength) {
-		/* if storing individual differences costs more space than storing the whole board
-		 * simply store the board */
-		copy_board(gptr, nodeBoard, 0, 0);
-		append(&currentNode, flags, 1, nodeBoard, gptr->sideLength);
-		return;
-		/* TODO possible bug with changeLength argument, shoudln't be sideLength^2?*/
-
-	} else {
-		/* storing individual differences costs less. Get individual differences and store them */
-		nodeBoard = malloc(countDiff * sizeof(int *));
-		k = 0; /*  */
-		for (i = 0; i < gptr->sideLength; i++) {
-			for (j = 0; j < gptr->sideLength; j++) {
-				if (gptr->user[i][j] != oldBoard[i][j]) {
-					nodeBoard[k] = malloc(4 * sizeof(int));
-					nodeBoard[k][0] = i;
-					nodeBoard[k][1] = j;
-					nodeBoard[k][2] = oldBoard[i][j];
-					nodeBoard[k][3] = gptr->user[i][j];
-
-					k++;
-				}
-			}
-		}
-		append(&currentNode, flags, 0, nodeBoard, countDiff);
-	}
 }
 
+/* to be printed before undoRedo call
+ * if undo, source==current, dest current->prev
+ * if redo, source==current, dest current->next
+ * if no changes were made, print that
+ * */
+void print_diff_nodes(node *source,node *dest){
+	/* TODO implement */
+}
+
+
+/*---------debugging-----------------------------------------------------*/
 /*TODO REMOVE- for debugging purposes only*/
-void print_current_node(node *Node, node *currentMove, game *gptr) {
-	int i;
+void print_current_node(node *Node, node *current, game *gptr) {
+	int j;
 
-	printf("-------------\nPRINITING NODE\n-------------");
-
-	if (currentMove == NULL) {
-		printf("ERROR - CURRENTMOVE IS NULL! \nEXITING...\n");
+	if (current == NULL) {
+		printf("ERROR - current IS NULL! \nEXITING...\n");
 		exit(0);
 	}
 
 	printf("%s", (Node->prev == NULL ? "First\n" : ""));
 	printf("%s", (Node->next == NULL ? "Last\n" : ""));
-	printf("%s", (Node == currentMove ? "Current\n" : ""));
+	printf("%s", (Node == current ? "Current\n" : ""));
 
-	if (Node->wholeBoard) {
-		print_board_matrix(Node->changes, gptr->cols, gptr->rows,
-				gptr->sideLength);
-	} else {
-		for (i = 0; i < Node->changeLength; i++) {
-			printf("Change %d: [i=%d,j=%d,old=%d,new=%d]\n", i + 1,
-					Node->changes[i][0], Node->changes[i][1],
-					Node->changes[i][2], Node->changes[i][3]);
+	print_matrix(Node->nodeBoard, gptr->sideLength);
+	if (!(Node->next == NULL)) {
+		for (j = 0; j < 4; j++) {
+			printf("\t||\n");
 		}
+		printf("\t\\/");
 	}
 
 }
 
 /*TODO REMOVE- for debugging purposes only*/
-
-void print_history(node *currentMove, game *gptr) {
-
+void print_history(node *currentNode, game *gptr) {
+	int k;
 	node *current;
 
-	printf("Printing moves history...\n");
-
-	if (currentMove==NULL || currentMove->changes==NULL){
-		printf("ERROR, CURRENTMOVE NOT INITIALIZED PROPERLY, TERMINATING ON EXIT...\n");
-		exit(0);
+	printf("--------MOVES HISTORY-------\n");
+	if (currentNode->next == NULL && currentNode->prev == NULL) {
+		printf("Single node in list, printing..\n");
+		print_current_node(currentNode, currentNode, gptr);
+		return;
 	}
 
-	current = currentMove;
+	current = currentNode;
+	while (current->prev != NULL) {
 
-	while (current->prev != current && current->prev != NULL) {
-		printf("reverting to first node\n");
+		if (k > 50) {
+			printf("More than 50 iterations, probably error, exiting...\n");
+			exit(0);
+		}
+
 		current = current->prev;
+		k++;
 	}
-	printf("after reverting\n");
-	while (current->next != NULL) {
-		printf("printing nodes...\n");
-		print_current_node(current, currentMove, gptr);
+	k = 1;
+	while (current != NULL) {
+		if (k > 50) {
+			printf("More than 50 iterations, probably ERROR...\n");
+			exit(0);
+		}
+		printf("\n---------Move %d----------\n", k);
+		print_current_node(current, currentNode, gptr);
+		current = current->next;
+		k++;
 	}
-	printf("reached end of print history\n");
+
+	printf("--------END OF MOVES HISTORY-------\n");
 
 }

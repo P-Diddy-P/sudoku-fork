@@ -1,8 +1,32 @@
 #include "gameStruct.h"
+#include "auxi.h"
 
 /***********************************************************************/
 /* TODO PRIVATE FUNCTIONS - SHOULD NOT BE INCLUDED IN HEADER FILE TODO */
 /***********************************************************************/
+
+/* 2 functions for copying 1 and 2 dimensional arrays, value by value
+ * assumes memory for both pointers is already allocated
+ * TODO - maybe add a null pointer mechanism */
+void copy_1d_array(int *copy_to, int *copy_from, int num_elements) {
+	int i;
+
+	for (i = 0; i < num_elements; i++) {
+		copy_to[i] = copy_from[i];
+	}
+
+}
+
+void copy_2d_array(int **copy_to, int **copy_from, int side) {
+	int i, j;
+
+	for (i = 0; i < side; i++) {
+		for (j = 0; j < side; j++) {
+			copy_to[i][j] = copy_from[i][j];
+		}
+	}
+
+}
 
 void print_dashes(int n) {
 	int i;
@@ -13,12 +37,22 @@ void print_dashes(int n) {
 	putchar('\n');
 }
 
-char get_control_char(game *gptr, int row, int col) {
-	if (gptr->flag[row][col] == FIXED) { /* TODO add game mode to condition? */
+/* added reference to game mode*/
+char get_control_char(game *gptr, int row, int col, int *flags) {
+	int print_error;
+
+	print_error = ((flags[MODE] == MODE_EDIT)
+			|| (flags[MODE] == MODE_SOLVE && flags[MARK_ERRORS_FLAG]));
+
+	if (gptr->flag[row][col] == FIXED) {
 		return '.';
 	}
-	if (gptr->flag[row][col] == ERROR) {
-		return '*';
+
+	if (print_error) {
+		if (gptr->flag[row][col] == ERROR) {
+			return '*';
+		}
+
 	}
 	return ' ';
 }
@@ -61,6 +95,17 @@ void check_column_for_errors(game *gptr, int **errorBoard, int colId) {
 	}
 }
 
+/* TODO - bug in update. example:
+-------------------
+|  3   0 |  4*  2*|
+|  0   0 |  4*  2*|
+-------------------
+|  0   0 |  2   4 |
+|  0   4*|  4*  1 |
+-------------------
+ *
+ *
+ *  */
 /* TODO extremely convoluted indexing, consider revising */
 void check_block_for_errors(game *gptr, int **errorBoard, int blockId) {
 	int si = blockId - (blockId % gptr->rows); /* row of first cell in block */
@@ -70,7 +115,7 @@ void check_block_for_errors(game *gptr, int **errorBoard, int blockId) {
 
 	for (ci = si; ci < si + gptr->rows; ci++) {
 		for (cj = sj; cj < sj + gptr->cols; cj++) {
-			/*printf("[[testing cell[%d][%d]=%d]]\n\n", ci, cj, gptr->user[ci][cj]);*/
+			/*printf("[[testing cell[%d][%d]=%d]]\n\n", ci+1, cj+1, gptr->user[ci][cj]);*/
 
 			if (gptr->user[ci][cj] == 0) {
 				/*printf("Value is 0, skipping comparisons.\n\n");*/
@@ -81,7 +126,7 @@ void check_block_for_errors(game *gptr, int **errorBoard, int blockId) {
 				rj = (ri == ci) ? (cj + 1) % gptr->cols : sj;
 
 				for (/* defined above */; rj < sj + gptr->cols; rj++) {
-					/*printf("    comparing [%d][%d]=(%d) ??? [%d][%d]=(%d)", ci, cj, gptr->user[ci][cj], ri, rj, gptr->user[ri][rj]);*/
+					/*printf("    comparing [%d][%d]=(%d) ??? [%d][%d]=(%d)", ci+1, cj+1, gptr->user[ci][cj], ri+1, rj+1, gptr->user[ri][rj]);*/
 					if (gptr->user[ci][cj] == gptr->user[ri][rj]) {
 						/*printf(": numbers match - marking errors.");*/
 						errorBoard[ci][cj] = ERROR;
@@ -173,26 +218,19 @@ int find_next_empty_cell(game *gptr, int *rowAddress, int *colAddress) {
 	return 0;
 }
 
-
 void init_board(game * gptr, int rows, int cols) {
 	/* Construct a game board with given rows and cols per block */
 	int i;
-
-	printf("Initializing board, rows = %d, cols = %d\n",rows,cols);
-
-	/* TODO remove*/
-	if (gptr==NULL){
-		printf("ERROR, GPTR NOT POINTING TO ANY BOARD, TERMINATING ON EXIT...\n");
-		exit(0);
-	}
 
 	gptr->cols = cols;
 	gptr->rows = rows;
 	gptr->sideLength = rows * cols;
 
 	/*TODO remove in the end*/
-	if (gptr->sideLength>2000){
-		printf("WARNING - MATRIX DIMENSIONS ARE OVER %dX%d, TERMINATING WITH EXIT()...\n",gptr->sideLength,gptr->sideLength);
+	if (gptr->sideLength > 2000) {
+		printf(
+				"WARNING - MATRIX DIMENSIONS ARE OVER %dX%d, TERMINATING WITH EXIT()...\n",
+				gptr->sideLength, gptr->sideLength);
 		exit(0);
 	}
 	/* changed to calloc from malloc */
@@ -204,12 +242,11 @@ void init_board(game * gptr, int rows, int cols) {
 		gptr->flag[i] = calloc(gptr->sideLength, sizeof(int));
 	}
 
-
-
 	/* compound statement check for memory allocation errors */
 	/* TODO: refactor to error functions in the compound statement, reduce clutter */
 	{
-		if (errno) {
+
+		if (errno) {/* TODO - errno could be set to non-zero value by a wide variety of errors, consider changing logic*/
 			printf("Error during game memory allocation.\n");
 			exit(errno);
 		}
@@ -227,7 +264,7 @@ void init_board(game * gptr, int rows, int cols) {
 	}
 }
 
-void print_board_aux(game *gptr) {
+void print_board_aux(game *gptr, int *flags) {
 	int dashLength = 4 * gptr->sideLength + gptr->rows + 1;
 	int i, j; /* iteration variables: i for current row, j for current column */
 
@@ -241,31 +278,22 @@ void print_board_aux(game *gptr) {
 				putchar('|');
 			}
 			printf(" %2d%c", gptr->user[i][j] ? gptr->user[i][j] : 0,
-					get_control_char(gptr, i, j));
+					get_control_char(gptr, i, j, flags));
 		}
 		printf("|\n");
 	}
 	print_dashes(dashLength);
 }
 
-void print_board_matrix(int **mat, int cols, int rows, int sideLength) {
-	int dashLength = 4 * sideLength + rows + 1;
+void print_matrix(int **mat, int sideLength) {
 	int i, j; /* iteration variables: i for current row, j for current column */
 
 	for (i = 0; i < sideLength; i++) {
-		if (i % rows == 0) {
-			print_dashes(dashLength);
-		}
-
 		for (j = 0; j < sideLength; j++) {
-			if (j % cols == 0) {
-				putchar('|');
-			}
-			printf(" %2d", mat[i][j] ? mat[i][j] : 0);
+			printf(" %d", (mat[i][j] ? mat[i][j] : 0));
 		}
-		printf("|\n");
+		printf("\n");
 	}
-	print_dashes(dashLength);
 }
 
 void update_board(game *gptr, int len, int *rowIds, int *colIds, int *values,
@@ -311,8 +339,7 @@ int update_board_errors(game *gptr) {
 		for (j = 0; j < gptr->sideLength; j++) {
 			gptr->flag[i][j] =
 					(gptr->flag[i][j] == FIXED) ? FIXED : validationBoard[i][j];
-			errorsInBoard =
-					(errorsInBoard) ? errorsInBoard : validationBoard[i][j];
+			errorsInBoard =	(errorsInBoard) ? errorsInBoard : validationBoard[i][j];
 		}
 	}
 	return errorsInBoard;
@@ -343,28 +370,30 @@ int check_valid_value(game *gptr, int row, int col, int value) {
 	return (rowValid && colValid && blockValid);
 }
 
-/* allocate memory for a 2D array of ints*/
+/* allocate memory for a 2D array of ints
+ * TODO check if problematic returning pointer */
 int** init_2d_array(int sideLength) {
 	int i;
 	int **mat;
 
 	/*TODO remove in the end*/
-	if (sideLength>2000){
-		printf("WARNING - MATRIX DIMENSIONS ARE: %d X %d, TERMINATING WITH EXIT()...\n",sideLength,sideLength);
+	if (sideLength > 2000) {
+		printf(
+				"WARNING - MATRIX DIMENSIONS ARE: %d X %d, TERMINATING WITH EXIT()...\n",
+				sideLength, sideLength);
 		exit(0);
 	}
 
+	mat = calloc(sideLength, sizeof(int *));
 
-	 mat = calloc(sideLength, sizeof(int *));
+	for (i = 0; i < sideLength; i++) {
+		mat[i] = calloc(sideLength, sizeof(int));
+	}
 
-	 for (i = 0; i < sideLength; i++) {
-	 mat[i] = calloc(sideLength, sizeof(int));
-	 }
-
-	 if (errno) {
-	 printf("Error during game memory allocation.\n");
-	 exit(errno);
-	 }
+	if (errno) {
+		printf("Error during game memory allocation.\n");
+		exit(errno);
+	}
 
 	return mat;
 }
@@ -372,6 +401,11 @@ int** init_2d_array(int sideLength) {
 /* free a 2D array of ints */
 void free_2d_array(int **mat, int sideLength) {
 	int i;
+
+	if (mat == NULL) {
+		return;
+	}
+
 	for (i = 0; i < sideLength; i++) {
 		free(mat[i]);
 	}
@@ -381,15 +415,7 @@ void free_2d_array(int **mat, int sideLength) {
 void free_game_pointer(game *gptr) {
 
 	/* if gptr is NULL, return without freeing */
-	if (gptr==NULL){
-		printf("In free_game_pointer, board is NULL\n");
-		return;
-	}
-
-	/* if gptr points to an unintialized board, return
-	 * TODO maybe remove  */
-	if (gptr->user==NULL){
-		printf("gptr->user==NULL\n");
+	if (!gptr) {
 		return;
 	}
 
@@ -398,8 +424,22 @@ void free_game_pointer(game *gptr) {
 
 }
 
-void assign_game_pointer(game **gptr, game *assign) {
-	*gptr = assign;
+/* copies values of loaded game to game pointer.
+ * assumes gptr user and flags were freed before call
+ *
+ * TODO - if we want to "plug" the pointer of the loaded board
+ * to gptr, every refrence to gptr need to be changed to
+ * **gptr, so the value itself of *gptr will change.
+ * seems like too much work at the moment and potential
+ * for many bugs.*/
+void assign_game_pointer(game *gptr, game *assign) {
+	gptr->user = init_2d_array(assign->sideLength);
+	gptr->flag = init_2d_array(assign->sideLength);
+	gptr->rows = assign->rows;
+	gptr->cols = assign->cols;
+	gptr->sideLength = assign->sideLength;
+	copy_2d_array(gptr->flag, assign->flag, assign->sideLength);
+	copy_2d_array(gptr->user, assign->user, assign->sideLength);
 }
 
 int is_board_full(game *gptr) {

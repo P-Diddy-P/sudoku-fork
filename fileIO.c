@@ -275,7 +275,6 @@ int load_get_dimensions(FILE *fp, game *local_gptr, int *flags) {
 	char *rows_str = 0, *cols_str = 0;
 	int rows, cols;
 
-
 	/* advance first whitespaces */
 	load_advance_whitespace(flags, fp);
 
@@ -313,11 +312,12 @@ int load_get_dimensions(FILE *fp, game *local_gptr, int *flags) {
 		return 0;
 	}
 
-	/* tokens are valid ints, read them as ints*/
+	/* tokens are valid ints, read them as ints */
 	rows = atoi(rows_str);
 	cols = atoi(cols_str);
 
-	/* free strings allocated */
+
+	/* free strings allocated*/
 	free(rows_str);
 	free(cols_str);
 
@@ -325,16 +325,19 @@ int load_get_dimensions(FILE *fp, game *local_gptr, int *flags) {
 	if ((rows < 0) || (cols < 0)) {
 		printf("Error, dimensions must be positive integers\n");
 		flags[LOAD_IS_INVALID_FORMAT] = 1;
+
 		return 0;
 	}
 
 	/* dimensions read succussfully, load them into the local game*/
 
-	printf("In load_board--load_get_dimensions\nrows=%d,cols=%d\n",rows,cols);
 
 	local_gptr->rows = rows;
 	local_gptr->cols = cols;
 	local_gptr->sideLength = rows * cols;
+
+
+	/* free strings allocated*/
 
 	return 1;
 
@@ -391,7 +394,9 @@ int load_entries(game *local_gptr, FILE *fp, int *flags) {
 int load_open_file(FILE *fp, int *flags, char **strings) {
 
 	/* print error if file not found*/
-	if (fp == NULL) {
+	if (errno == NO_FILE) {/* NO_FILE==2 is errno code for "No such file" */
+		errno=0; /* reset errno after failure - otherwise it will cause memory faliure */
+		/* TODO - is setting errno valid? */
 		printf("Error, file not found\n");
 		flags[INVALID_USER_COMMAND] = 1;
 		return 0;
@@ -403,40 +408,42 @@ int load_open_file(FILE *fp, int *flags, char **strings) {
 /* Try to access file with path, read dimensions,
  * initialize board
  * */
-game* load_board(ARGS_DEF_FUNC) {
+void load_board(game *local_gptr,int *flags,char **strings, node **currentMove) {
 	FILE *fp;
+
+	/*
 	game load_game;
 	game *load_gptr;
 
-
-	/* init local board pointer */
 	load_gptr = &load_game;
+	*/
 
 	/* try to find file using path from user*/
 	fp = fopen(strings[PATH], "r");
 
+
 	/* check if file opened correctly, return on error if not */
 	if (!load_open_file(fp, flags, strings)) {
-		return 0;
+		return;
 	}
 
 	/* try to read dimensions from file, return false if failed*/
-	if (!load_get_dimensions(fp, load_gptr, flags)) {
-		return 0;
+	if (!load_get_dimensions(fp, local_gptr, flags)) {
+		return;
 	}
 
 	/* init board with dimensions read */
-	init_board(load_gptr, load_gptr->rows, load_gptr->cols);
+	init_board(local_gptr, local_gptr->rows, local_gptr->cols);
 
 	/* if successful, return pointer */
-	if (load_entries(load_gptr, fp, flags)) {
+	if (load_entries(local_gptr, fp, flags)) {
 
-		return load_gptr;
+		return;
 	}
 
 	/* else, return null*/
 	flags[INVALID_USER_COMMAND] = 1;
-	return 0;
+	return;
 
 }
 
