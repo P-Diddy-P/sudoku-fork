@@ -18,15 +18,13 @@ typedef struct stack {
 	int **stackArray;
 }stack;
 
-/* Remove those after validation. This implementation should be hidden from the user */
-/*
+/* Partial implementation of stack revealed to different modules in order to easily
+ * buffer possible values in autocomplete module */
 void stack_init(stack *stkptr);
 void stack_push(stack *stkptr, int row, int col, int value);
-void stack_diminish(stack *stkptr);
-void stack_enlarge(stack *stkptr);
 void stack_pop(stack *stkptr, int *dstptr);
 void stack_peek(stack *stkptr, int *dstptr);
-*/
+void stack_free(stack *stkptr);
 int stack_tracking(game *gptr);
 
 #endif /* STACKTRACKING_H_ */

@@ -2,6 +2,7 @@
 #define AUTOCOMPLETE_H_
 
 #include "gameStruct.h"
+#include "stackTracking.h"
 
 int auto_complete(game *gptr);
 /* Goes over all empty cells in the board ONCE, filling each cell only if there is

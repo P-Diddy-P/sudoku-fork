@@ -25,16 +25,30 @@ int find_single_valid_value(game *gptr, int row, int col) {
 int auto_complete(game *gptr) {
 	int currentRow = 0, currentCol = 0;
 	int svPlaceholder = 0, cellsFilled = 0;
+	int *stkres = malloc(3 * sizeof(int));
+	stack stk;
+	stack *stkptr = &stk;
+
+	stack_init(stkptr);
 
 	while(!find_next_empty_cell(gptr, &currentRow, &currentCol)) {
 		if ( (svPlaceholder = find_single_valid_value(gptr, currentRow, currentCol)) ) {
-			gptr->user[currentRow][currentCol] = svPlaceholder;
+			stack_push(stkptr, currentRow, currentCol, svPlaceholder);
 			cellsFilled++;
-		} else {
-			currentRow += (currentCol + 1) / gptr->sideLength;
-			currentCol = (currentCol + 1) % gptr->sideLength;
 		}
+
+		currentRow += (currentCol + 1) / gptr->sideLength;
+		currentCol = (currentCol + 1) % gptr->sideLength;
 	}
+
+	stack_pop(stkptr, stkres);
+	while (stkres[2] > -1) {
+		gptr->user[stkres[0]][stkres[1]] = stkres[2];
+		stack_pop(stkptr, stkres);
+	}
+
+	free(stkres);
+	stack_free(stkptr);
 	return cellsFilled;
 }
 

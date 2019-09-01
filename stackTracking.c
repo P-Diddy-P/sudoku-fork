@@ -1,10 +1,8 @@
 #include "stackTracking.h"
 
 /********************************************************/
-/*     TODO STACK ADT FUNCTIONS - PRIVATE USE TODO      */
+/*     TODO 	  STACK ADT FUNCTIONS     TODO      	*/
 /********************************************************/
-
-/*TODO - why not use calloc function instead of malloc?*/
 
 void stack_init(stack *stkptr) {
 	stkptr->totalSize = STACK_INIT_SIZE;
@@ -109,7 +107,7 @@ void print_top(stack *stkptr) {
 	free(top);
 }
 
-int stack_tracking(game *gptr) { /* TODO - build function logic with pen and paper instead of typing stupid shit */
+int stack_tracking(game *gptr) {
 	int possibleSolutions = 0;
 	int currentRow = 0, currentCol = 0;
 	int *stkres;
@@ -146,7 +144,6 @@ int stack_tracking(game *gptr) { /* TODO - build function logic with pen and pap
 		if (check_valid_value(gptr, currentRow, currentCol, stkres[2])) {
 			if (find_next_empty_cell(gptr, &currentRow, &currentCol)) {
 				possibleSolutions++;
-				printf("||%d||\n", possibleSolutions);
 				/*printf("  found valid board. Current solutions are %d.\n", possibleSolutions);*/
 				/* if we reached the end of the board, the number of solutions increments (as we found a solution),
 				 * and we proceed to increment the value of the topmost member of the stack (same as with an invalid
