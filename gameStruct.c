@@ -95,47 +95,44 @@ void check_column_for_errors(game *gptr, int **errorBoard, int colId) {
 	}
 }
 
-/* TODO - bug in update. example:
--------------------
-|  3   0 |  4*  2*|
-|  0   0 |  4*  2*|
--------------------
-|  0   0 |  2   4 |
-|  0   4*|  4*  1 |
--------------------
- *
- *
- *  */
-/* TODO extremely convoluted indexing, consider revising */
+/* TODO: Indexing explained:
+ * si and sj mark the first cell in the block (top left). Those remain static throughout the function.
+ * ci and cj mark the current cell being compared to subsequent cells (marked with coords ri and rj),
+ * and are incremented according to block rules in each iteration. That means cj increases until it passed
+ * a whole block worth of columns from sj, then cj is reset to equal sj, and ci is incremented, etc.
+ * In order to diminish running time, every cell is compared only to cells lower and to the right, so
+ * for each cell [ci, cj], the coordinates [ri, rj] are set to those of the next cell, and are incremented
+ * accordint to block rules. */
 void check_block_for_errors(game *gptr, int **errorBoard, int blockId) {
-	int si = blockId - (blockId % gptr->rows); /* row of first cell in block */
-	int sj = (blockId % gptr->rows) * gptr->cols; /* column of first cell in block */
-	int ci, cj; /* iteration variables for the currently checked reference */
-	int ri, rj; /* iteration variables for values compared to the current reference */
+	int si = blockId - (blockId % gptr->rows);
+	int sj = (blockId % gptr->rows) * gptr->cols;
+	int ci, cj;
+	int ri, rj;
 
 	for (ci = si; ci < si + gptr->rows; ci++) {
 		for (cj = sj; cj < sj + gptr->cols; cj++) {
-			/*printf("[[testing cell[%d][%d]=%d]]\n\n", ci+1, cj+1, gptr->user[ci][cj]);*/
+			/* printf("[[testing cell[%d][%d]=%d]]\n\n", ci+1, cj+1, gptr->user[ci][cj]); */
 
 			if (gptr->user[ci][cj] == 0) {
 				/*printf("Value is 0, skipping comparisons.\n\n");*/
 				continue; /* skip 0 values for performance, those don't cause errors */
 			}
 
-			for (ri = ci + (cj + 1) / gptr->cols; ri < si + gptr->rows; ri++) {
+			for (ri = ci + (cj - sj + 1)/gptr->cols; ri < si + gptr->rows; ri++) {
 				rj = (ri == ci) ? (cj + 1) % gptr->cols : sj;
 
 				for (/* defined above */; rj < sj + gptr->cols; rj++) {
-					/*printf("    comparing [%d][%d]=(%d) ??? [%d][%d]=(%d)", ci+1, cj+1, gptr->user[ci][cj], ri+1, rj+1, gptr->user[ri][rj]);*/
+					/* printf("    comparing [%d][%d]=(%d) ??? [%d][%d]=(%d)", ci+1, cj+1, gptr->user[ci][cj],
+							ri+1, rj+1, gptr->user[ri][rj]); */
 					if (gptr->user[ci][cj] == gptr->user[ri][rj]) {
-						/*printf(": numbers match - marking errors.");*/
+						/* printf(": numbers match - marking errors."); */
 						errorBoard[ci][cj] = ERROR;
 						errorBoard[ri][rj] = ERROR;
 					}
-					/*printf("\n");*/
+					/* printf("\n"); */
 				}
 			}
-			/*printf("\n");*/
+			/* printf("\n"); */
 		}
 	}
 }
