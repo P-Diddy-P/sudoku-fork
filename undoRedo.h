@@ -21,7 +21,7 @@ typedef struct node {
  * or specific changes should be decided according to the number of changed cells.
  */
 
-void commit_move(node **currentNode, game *gptr, int *flags,int isFirst);
+void commit_move(node **currentNode, game *gptr, int *flags, int isFirst);
 /* finds differences between the current boards and oldBoard, storing said differences in a new linked list node.
  * In order to conserve space, differences will be stored in 4-tuples or the whole board according to space
  * considerations. The function returns the appended linked list node (already linked after the current node),

@@ -81,14 +81,11 @@ void append(node **current, int **nodeBoard, int *flags, int isFirst,
 	/* terminate nodes from current forward (exclusive),
 	 * set current next as newNode*/
 	if (!isFirst) {
-		if ((*current)->next != NULL) { /* TODO remove current.next != NULL check. terminate takes care of that */
-			terminate((*current)->next);
-		}
+		terminate((*current)->next);
 		(*current)->next = newNode;
 	}
 
 	*current = newNode;
-
 }
 
 /* Copies a game state (flags and board) from a node adjacent to current (node->next or
@@ -97,8 +94,7 @@ void undoRedo(game *gptr, node **current, int *flags, int undo) {
 
 	/* local node that will hold current. if redo
 	 * xor current.prev if undo */
-	node *local_node; /* TODO try replacing local_node with current.
-	 	 	 	 	 	 not sure why it is needed anyways */
+	node *local_node;
 
 	/* if undo and no previous move or redo and no next, return error*/
 	if ((!undo && (*current)->next == NULL)
