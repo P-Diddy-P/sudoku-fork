@@ -73,7 +73,6 @@ int is_fixed_erroneous(game *gptr) {
 	/* return false otherwise */
 	free_game_pointer(local_copy_gptr);
 	return 0;
-
 }
 
 /* Helper function to pring X, Y or Z in error messages */
@@ -114,7 +113,6 @@ int get_int_from_str(ARGS_DEF_FUNC, int arg) {
 
 	flags[INVALID_USER_COMMAND] = 1;
 	return NULL;
-
 }
 
 /* Frees all nodes currently in list, including current one
@@ -149,7 +147,7 @@ void init_new_undoRedo(game *gptr, node **current, int *flags) {
 /*-------------Solve---------------*/
 
 /* Using file-I/O module to load game from file,
- * update game mode to solve*/
+ * update game mode to solve */
 void solve(ARGS_DEF_FUNC) {
 
 	/* init local game pointer and try to load board */

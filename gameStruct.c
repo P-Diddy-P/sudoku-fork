@@ -5,29 +5,7 @@
 /* TODO PRIVATE FUNCTIONS - SHOULD NOT BE INCLUDED IN HEADER FILE TODO */
 /***********************************************************************/
 
-/* 2 functions for copying 1 and 2 dimensional arrays, value by value
- * assumes memory for both pointers is already allocated
- * TODO - maybe add a null pointer mechanism */
-void copy_1d_array(int *copy_to, int *copy_from, int num_elements) {
-	int i;
-
-	for (i = 0; i < num_elements; i++) {
-		copy_to[i] = copy_from[i];
-	}
-
-}
-
-void copy_2d_array(int **copy_to, int **copy_from, int side) {
-	int i, j;
-
-	for (i = 0; i < side; i++) {
-		for (j = 0; j < side; j++) {
-			copy_to[i][j] = copy_from[i][j];
-		}
-	}
-
-}
-
+/* Prints a dash character for n times then a newline character. Used to print according to format. */
 void print_dashes(int n) {
 	int i;
 
@@ -37,7 +15,9 @@ void print_dashes(int n) {
 	putchar('\n');
 }
 
-/* added reference to game mode*/
+/* Returns a control character to be printed after a number according to cell level flags (whether
+ * a cell is fixed or contains an error), and game level flags (edit or solve mode, and mark errors
+ * flag). */
 char get_control_char(game *gptr, int row, int col, int *flags) {
 	int print_error;
 
@@ -57,6 +37,22 @@ char get_control_char(game *gptr, int row, int col, int *flags) {
 	return ' ';
 }
 
+/* returns an ascii character of a given digit, or the space character if that digit is zero.
+ * This function implicitly assumes that it will receive values lower than 100. This complies
+ * to the board print format, as can be seen here: https://moodle.tau.ac.il/mod/forum/discuss.php?d=87711 */
+char get_digit_char(int value, int second_digit) {
+	int digit_value;
+
+	digit_value = (second_digit) ? value / 10 : value % 10;
+
+	/* if the printed digit is zero, but value is 10 or above, this
+	 * must be the first digit of a multiple of 10, so it should be printed */
+	return (digit_value || value >= 10) ? 48 + digit_value : 32;
+}
+
+/* Checks for every value in a row whether a subsequent cell (to the checked cell right)
+ * contains the same value. In case a duplicate is found, both cell coordinates are marked in
+ * validation board. */
 void check_row_for_errors(game *gptr, int **errorBoard, int rowId) {
 	int j; /* iteration variable for current checked cell. */
 	int k; /* iteration variable for j subsequent comparisons */
@@ -76,6 +72,9 @@ void check_row_for_errors(game *gptr, int **errorBoard, int rowId) {
 	}
 }
 
+/* Checks for every value in a column whether a subsequent cell (below the checked cell)
+ * contains the same value. In case a duplicate is found, both cell coordinates are marked in
+ * validation board. */
 void check_column_for_errors(game *gptr, int **errorBoard, int colId) {
 	int i; /* iteration variable for current checked cell. */
 	int k; /* iteration variable for i subsequent comparisons */
@@ -95,7 +94,7 @@ void check_column_for_errors(game *gptr, int **errorBoard, int colId) {
 	}
 }
 
-/* TODO: Indexing explained:
+/* Indexing explained:
  * si and sj mark the first cell in the block (top left). Those remain static throughout the function.
  * ci and cj mark the current cell being compared to subsequent cells (marked with coords ri and rj),
  * and are incremented according to block rules in each iteration. That means cj increases until it passed
@@ -137,6 +136,9 @@ void check_block_for_errors(game *gptr, int **errorBoard, int blockId) {
 	}
 }
 
+/* Next 3 functions make sure a given row/column/block does not already contain a certain value.
+ * These functions should be called before entering that value to the board. And will return true(1)
+ * if the value is not already in said row/column/block. */
 int row_valid_value(game *gptr, int row, int value) {
 	int j;
 	for (j = 0; j < gptr->sideLength; j++) {
@@ -175,6 +177,27 @@ int block_valid_value(game *gptr, int valueRow, int valueCol, int value) {
 /*******************************************************/
 /* TODO PUBLIC FUNCTIONS - INCLUDE IN HEADER FILE TODO */
 /*******************************************************/
+
+/* 2 functions for copying 1 and 2 dimensional arrays, value by value
+ * assumes memory for both pointers is already allocated
+ * TODO - maybe add a null pointer mechanism */
+void copy_1d_array(int *copy_to, int *copy_from, int num_elements) {
+	int i;
+
+	for (i = 0; i < num_elements; i++) {
+		copy_to[i] = copy_from[i];
+	}
+}
+
+void copy_2d_array(int **copy_to, int **copy_from, int side) {
+	int i, j;
+
+	for (i = 0; i < side; i++) {
+		for (j = 0; j < side; j++) {
+			copy_to[i][j] = copy_from[i][j];
+		}
+	}
+}
 
 /* Changed function arguments of copy_board to add
  * functionality. The int isFixed controls if only fixed values
@@ -274,7 +297,7 @@ void print_board_aux(game *gptr, int *flags) {
 			if (j % gptr->cols == 0) {
 				putchar('|');
 			}
-			printf(" %2d%c", gptr->user[i][j] ? gptr->user[i][j] : 0,
+			printf(" %c%c%c", get_digit_char(gptr->user[i][j], 1), get_digit_char(gptr->user[i][j], 0),
 					get_control_char(gptr, i, j, flags));
 		}
 		printf("|\n");
@@ -293,6 +316,7 @@ void print_matrix(int **mat, int sideLength) {
 	}
 }
 
+/* TODO debug function. remove from final product */
 void update_board(game *gptr, int len, int *rowIds, int *colIds, int *values,
 		int * flags) {
 	int addFlags = !(flags == NULL);
@@ -308,6 +332,7 @@ void update_board(game *gptr, int len, int *rowIds, int *colIds, int *values,
 	}
 }
 
+/* TODO debug function. remove from final product */
 void update_random(game *gptr, int seed, int addFlags) {
 	srand(seed);
 	int i, j;
@@ -339,6 +364,8 @@ int update_board_errors(game *gptr) {
 			errorsInBoard =	(errorsInBoard) ? errorsInBoard : validationBoard[i][j];
 		}
 	}
+
+	free_2d_array(validationBoard, gptr->sideLength);
 	return errorsInBoard;
 }
 

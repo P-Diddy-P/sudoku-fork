@@ -23,7 +23,7 @@ void terminate(node *current) {
 	node *nextNode;
 
 	/* while current is not NULL - if last node
-	 * it's next will be NULL, terminating*/
+	 * it's next will be NULL, terminating */
 	while (current) {
 		nextNode = current->next;
 		free_node(current);
@@ -42,7 +42,6 @@ void terminate_all(node *current) {
 	}
 
 	/* revert back to first node, and then terminate forward*/
-
 	while (current->prev != NULL) {
 		current = current->prev;
 	}
@@ -82,7 +81,7 @@ void append(node **current, int **nodeBoard, int *flags, int isFirst,
 	/* terminate nodes from current forward (exclusive),
 	 * set current next as newNode*/
 	if (!isFirst) {
-		if ((*current)->next != NULL) {
+		if ((*current)->next != NULL) { /* TODO remove current.next != NULL check. terminate takes care of that */
 			terminate((*current)->next);
 		}
 		(*current)->next = newNode;
@@ -92,13 +91,14 @@ void append(node **current, int **nodeBoard, int *flags, int isFirst,
 
 }
 
-/* Reverts game pointer and flags to previous state, updates
- * current node to new node */
+/* Copies a game state (flags and board) from a node adjacent to current (node->next or
+ * node->prev), and set current to the node of the new state. */
 void undoRedo(game *gptr, node **current, int *flags, int undo) {
 
-	/* local node that will hold current.  if redo
+	/* local node that will hold current. if redo
 	 * xor current.prev if undo */
-	node *local_node;
+	node *local_node; /* TODO try replacing local_node with current.
+	 	 	 	 	 	 not sure why it is needed anyways */
 
 	/* if undo and no previous move or redo and no next, return error*/
 	if ((!undo && (*current)->next == NULL)
@@ -122,9 +122,8 @@ void undoRedo(game *gptr, node **current, int *flags, int undo) {
 	/* copy flags */
 	copy_1d_array(flags, local_node->flagArray, NUM_FLAGS);
 
-	/* current pointer now points to previous move*/
+	/* current pointer now points to previous move */
 	*current = local_node;
-
 }
 
 /* allocate new nodeBoard from recently changed board
@@ -132,25 +131,29 @@ void undoRedo(game *gptr, node **current, int *flags, int undo) {
 void commit_move(node **current, game *gptr, int *flags, int isFirst) {
 	int **nodeBoard = NULL;
 
-	/* init nodeBoard (always)*/
 	nodeBoard = init_2d_array(gptr->sideLength);
-
-	/* copy entire board for node, and append new node
-	 * TODO what about flags board? */
 	copy_board(gptr, nodeBoard, 0, 0);
-
-	/* append new node to list */
 	append(current, nodeBoard, flags, isFirst, gptr->sideLength);
-
 }
 
-/* to be printed before undoRedo call
- * if undo, source==current, dest current->prev
- * if redo, source==current, dest current->next
- * if no changes were made, print that
- * */
+/* Prints the difference in nodeBoards between source node and destination node.
+ * If no changes were detected between the nodes, indicates that by a printed message.
+ * TODO discuss message format. */
 void print_diff_nodes(node *source,node *dest){
-	/* TODO implement */
+	int i, j, changeExist = 0;
+	int **sourceBoard = source->nodeBoard;
+	int **destBoard = dest->nodeBoard;
+
+	for (i=0; i<source->sideLength; i++) {
+		for (j=0; j<source->sideLength; j++) {
+			printf("	Cell [%d, %d] changed from %d to %d.\n", j, i, sourceBoard[i][j], destBoard[i][j]);
+			changeExist = 1;
+		}
+	}
+
+	if (!changeExist) {
+		printf("	No changes to the board.\n");
+	}
 }
 
 
