@@ -144,7 +144,7 @@ int stack_tracking(game *gptr) {
 		if (check_valid_value(gptr, currentRow, currentCol, stkres[2])) {
 			if (find_next_empty_cell(gptr, &currentRow, &currentCol)) {
 				possibleSolutions++;
-				/*printf("  found valid board. Current solutions are %d.\n", possibleSolutions);*/
+				/* printf("  found valid board. Current solutions are %d.\n", possibleSolutions); */
 				/* if we reached the end of the board, the number of solutions increments (as we found a solution),
 				 * and we proceed to increment the value of the topmost member of the stack (same as with an invalid
 				 * value). */

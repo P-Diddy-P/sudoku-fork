@@ -101,7 +101,14 @@ void check_column_for_errors(game *gptr, int **errorBoard, int colId) {
  * a whole block worth of columns from sj, then cj is reset to equal sj, and ci is incremented, etc.
  * In order to diminish running time, every cell is compared only to cells lower and to the right, so
  * for each cell [ci, cj], the coordinates [ri, rj] are set to those of the next cell, and are incremented
- * accordint to block rules. */
+ * accordint to block rules.
+ *
+ * ri is set to be equal to ci, unless the column of the compared cell is the last column of the block.
+ * in which case the subsequent cell will be in a lower row. i.e. if (cj - sj + 1) == gptr->cols, the
+ * cell to the right of [ci, cj] will overflow the block borders, so go down a row.
+ *
+ * rj is set to be directly to the right of cj (cj + 1), unless cj is the last column in the block, in
+ * which case (cj + 1) == (sj + gptr->cols), and rj is set to sj of a lower row. */
 void check_block_for_errors(game *gptr, int **errorBoard, int blockId) {
 	int si = blockId - (blockId % gptr->rows);
 	int sj = (blockId % gptr->rows) * gptr->cols;
@@ -118,7 +125,7 @@ void check_block_for_errors(game *gptr, int **errorBoard, int blockId) {
 			}
 
 			for (ri = ci + (cj - sj + 1)/gptr->cols; ri < si + gptr->rows; ri++) {
-				rj = (ri == ci) ? (cj + 1) % gptr->cols : sj;
+				rj = (ri == ci) ? (cj + 1) % (sj + gptr->cols) : sj;
 
 				for (/* defined above */; rj < sj + gptr->cols; rj++) {
 					/* printf("    comparing [%d][%d]=(%d) ??? [%d][%d]=(%d)", ci+1, cj+1, gptr->user[ci][cj],
