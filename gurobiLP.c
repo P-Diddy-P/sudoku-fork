@@ -290,7 +290,7 @@ int gurobi_lp(game *gptr, int **cell_map, double ***solution_address, int empty_
     double *variable_upper_bound;
     double *constraint_coefficient = calloc(gptr->sideLength, sizeof(double));
 
-    error = GRBloadenv(&env, "LPguess.log");
+    error = GRBloadenv(&env, NULL);
     if (error) {
         printf("ERROR %d GRBloadenv: %s\n", error, GRBgeterrormsg(env));
         return -1;
