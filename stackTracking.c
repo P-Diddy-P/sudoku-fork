@@ -8,11 +8,8 @@ void stack_init(stack *stkptr) {
 	stkptr->totalSize = STACK_INIT_SIZE;
 	stkptr->usedSize = 0;
 	stkptr->stackArray = malloc(stkptr->totalSize * sizeof(int *));
-	if (errno || stkptr->stackArray == NULL) {
-		printf("Error during memory allocation.%s\n",
-				(stkptr->stackArray == NULL) ? "Received null pointer." : "");
-		exit((errno) ? errno : 1);
-	}
+	memory_alloc_error();
+
 }
 
 void stack_diminish(stack *stkptr) {
@@ -21,11 +18,7 @@ void stack_diminish(stack *stkptr) {
 	stkptr->totalSize = stkptr->totalSize / STACK_ENLARGE_RATE;
 	stkptr->stackArray = realloc(stkptr->stackArray,
 			stkptr->totalSize * sizeof(int *));
-	if (errno || stkptr->stackArray == NULL) {
-		printf("Error during memory allocation.%s\n",
-				(stkptr->stackArray == NULL) ? "Received null pointer." : "");
-		exit((errno) ? errno : 1);
-	}
+	memory_alloc_error();
 }
 
 void stack_enlarge(stack *stkptr) {
@@ -34,15 +27,12 @@ void stack_enlarge(stack *stkptr) {
 	stkptr->totalSize = stkptr->totalSize * STACK_ENLARGE_RATE;
 	stkptr->stackArray = realloc(stkptr->stackArray,
 			stkptr->totalSize * sizeof(int *));
-	if (errno || stkptr->stackArray == NULL) {
-		printf("Error during memory allocation.%s\n",
-				(stkptr->stackArray == NULL) ? "Received null pointer." : "");
-		exit((errno) ? errno : 1);
-	}
+	memory_alloc_error();
 }
 
 void stack_push(stack *stkptr, int row, int col, int value) {
 	int *newMember = malloc(3 * sizeof(int));
+	memory_alloc_error();
 	*newMember = row;
 	*(newMember + 1) = col;
 	*(newMember + 2) = value;
@@ -101,6 +91,7 @@ void stack_free(stack *stkptr) {
 
 void print_top(stack *stkptr) {
 	int *top = malloc(3 * sizeof(int));
+	memory_alloc_error();
 	stack_peek(stkptr, top);
 	printf("[%d, %d, %d] at %d / %d", top[0], top[1], top[2], stkptr->usedSize,
 			stkptr->totalSize);
@@ -114,11 +105,11 @@ int stack_tracking(game *gptr) {
 	stack stk;
 	stack *stkptr = &stk;
 
-	/* printf("||starting stack tracking||\n"); */
+	/**/ printf("||starting stack tracking||\n");
 	if (board_has_errors(gptr)
 			|| find_next_empty_cell(gptr, &currentRow, &currentCol)) {
-		/* printf("  board %s. Exiting with 0 solutions.\n", (board_has_errors(gptr) ? "has errors" : "is full"));
-		 printf("||stack tracking finished\n"); */
+		/**/ printf("  board %s. Exiting with 0 solutions.\n", (board_has_errors(gptr) ? "has errors" : "is full"));
+		 printf("||stack tracking finished\n");
 		return 0;
 		/* if the board contains errors, or no cell is empty, then there are no possible solutions (we will
 		 * assume the board is not solved correctly when counting solutions. if both conditions are false, we still
@@ -127,6 +118,7 @@ int stack_tracking(game *gptr) {
 
 	stack_init(stkptr);
 	stkres = malloc(3 * sizeof(int));
+	memory_alloc_error();
 	stack_push(stkptr, currentRow, currentCol, 1);
 
 	while (!stack_empty(stkptr)) {
@@ -144,13 +136,13 @@ int stack_tracking(game *gptr) {
 		if (check_valid_value(gptr, currentRow, currentCol, stkres[2])) {
 			if (find_next_empty_cell(gptr, &currentRow, &currentCol)) {
 				possibleSolutions++;
-				/* printf("  found valid board. Current solutions are %d.\n", possibleSolutions); */
+				/**/printf("  found valid board. Current solutions are %d.\n", possibleSolutions);
 				/* if we reached the end of the board, the number of solutions increments (as we found a solution),
 				 * and we proceed to increment the value of the topmost member of the stack (same as with an invalid
 				 * value). */
 			} else {
 				stack_push(stkptr, currentRow, currentCol, 1);
-				/*printf("  value is valid, pushing to stack.\n");*/
+				/**/printf("push v: [[%d][%d]=%d].\n",stkres[0], stkres[1], stkres[2]);
 				continue;
 				/* if we find another empty cell, we will attempt to fill it with a valid value next, based on the
 				 * current top of the stack */
@@ -162,8 +154,11 @@ int stack_tracking(game *gptr) {
 		 * earliest value which can be incremented, emptying each cell as we go along. */
 		do {
 			stack_pop(stkptr, stkres);
+			/**/printf("pop: [[%d][%d]=%d].\n",stkres[0], stkres[1], stkres[2]);
+
 			/*printf("    removed [[%d][%d]=%d] from the stack.\n", stkres[0], stkres[1], stkres[2]);*/
 			if (stkres[0] >= 0 && stkres[1] >= 0) {
+
 				gptr->user[stkres[0]][stkres[1]] = 0;
 			}
 			/* while the values in the stack are at maximal range (for example, 9 in regular game),
@@ -173,6 +168,8 @@ int stack_tracking(game *gptr) {
 
 		if (stkres[2] > 0 && stkres[2] < gptr->sideLength) {
 			stack_push(stkptr, stkres[0], stkres[1], stkres[2] + 1);
+			/**/printf("push i: [[%d][%d]=%d].\n",stkres[0], stkres[1], stkres[2]);
+
 		}
 
 	}

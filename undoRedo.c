@@ -1,6 +1,94 @@
 #include "undoRedo.h"
 #include "auxi.h"
 
+/* copy changes to gptr->user, according to undo or redo
+ * in undo, copy values from current old values
+ * in redo, copy values from new */
+void copy_changes(game *gptr, int **changes, int changesLen, int undo) {
+	int ind;
+
+	if (changesLen == 0) {
+		return;
+	}
+
+	/* if undo, copy old values to gptr->user
+	 * else (redo), copy new values to gptr->user from new */
+	for (ind = 0; ind < changesLen; ind++) {
+		if (undo) {
+			gptr->user[changes[ind][0]][changes[ind][1]] = changes[ind][2];
+		} else {
+			gptr->user[changes[ind][0]][changes[ind][1]] = changes[ind][3];
+		}
+	}
+}
+
+/* return number of changes made from previous move*/
+int count_diffs(int **old_board, int **new_board, int sideLength) {
+	int i, j, counter;
+
+	for (i = 0; i < sideLength; i++) {
+		for (j = 0; j < sideLength; j++) {
+			if (old_board[i][j] != new_board[i][j]) {
+				counter++;
+			}
+		}
+	}
+
+	return counter;
+}
+
+/* return a list of quad-arrays [[i_1,j_1,old_1,new_1],[i_2,j_2,old_2,new_2],...]
+ * if there are changes, NULL if there are no changes */
+int** get_changes_list(int **old_board, int **new_board, int sideLength,
+		int *changes_num) {
+	int i, j, changes_counter, change_index;
+	int **changes;
+
+	changes_counter = count_diffs(old_board, new_board, sideLength);
+	*changes_num = changes_counter;
+
+	if (changes_num == 0) {
+		return NULL;
+	}
+
+	changes = calloc(changes_counter, sizeof(int*));
+
+	memory_alloc_error();
+
+	for (i = 0; i < sideLength; i++) {
+		for (j = 0; j < sideLength; j++) {
+			if (old_board[i][j] != new_board[i][j]) {
+				changes[change_index] = calloc(4, sizeof(int));
+				memory_alloc_error();
+
+				changes[change_index][0] = i;
+				changes[change_index][1] = j;
+				changes[change_index][2] = old_board[i][j];
+				changes[change_index][3] = new_board[i][j];
+
+				change_index++;
+			}
+		}
+	}
+
+	return changes;
+}
+
+void print_changes(int **changes, int changes_num, int undo) {
+	int itr;
+
+	if (changes_num == 0) {
+		printf("No changes in board\n");
+		return;
+	}
+
+	for (itr = 0; itr < changes_num; itr++) {
+		printf("Row: %d, Col: %d changed from %d to %d\n", changes[itr][0]+1,
+				changes[itr][1]+1, (undo ? changes[itr][3] : changes[itr][2]),
+				(undo ? changes[itr][2] : changes[itr][3]));
+	}
+}
+
 /* frees the pointer allocated for the struct - flag and nodeBoard,
  * and the node itself. assumes node allocated,
  * TODO - what error should be returned? */
@@ -12,7 +100,7 @@ void free_node(node *delNode) {
 	}
 	/* free flag array and nodeBoard */
 	free(delNode->flagArray);
-	free_2d_array(delNode->nodeBoard, delNode->sideLength);
+	free_2d_array(delNode->changes, delNode->changesLen);
 	/* free node */
 	free(delNode);
 }
@@ -54,109 +142,153 @@ void terminate_all(node *current) {
  * isFirst is used to determine if forward termination is required
  * lastly, current is derefed and assigned the address
  * of the newly created node */
-void append(node **current, int **nodeBoard, int *flags, int isFirst,
-		int sideLength) {
-	/* allocate space for node */
-	node *newNode = calloc(1, sizeof(node));
-
+void append(node **current, int **changes, int *flags, int isFirst,
+		int changesLen) {
+	/* declare and allocate newnode */
 	/* allocate space for flag array ad copy flags array */
+	node *newNode = calloc(1, sizeof(node));
+	memory_alloc_error();
 	newNode->flagArray = calloc(NUM_FLAGS, sizeof(int));
+	memory_alloc_error();
+
+
 	copy_1d_array(newNode->flagArray, flags, NUM_FLAGS);
 
-	/* set nodeBoard*/
-	newNode->nodeBoard = nodeBoard;
+	/* if first, create "NULL" node of first move and return
+	 * no changes are recorded.
+	 * the first null node is the only node with node->prev==NULL */
+	if (isFirst) {
+		newNode->changesLen = 0;
+		newNode->noChanges = 1;
+		newNode->changes = NULL;
+		newNode->prev = NULL;
+		newNode->next = NULL;
+		*current = newNode;
+		return;
+	}
+
+	/*if no changes, set noChanges flag */
+	if (changesLen == 0) {
+		newNode->noChanges = 1;
+	}
+
+	/* if there are changes, set them */
+
+	else {
+		newNode->noChanges = 0;
+		newNode->changes = changes;
+		newNode->changesLen = changesLen;
+	}
+
 	/* set previous of new node as current, and next as NULL.
 	 * this way, the previous pointer of the first node in an
 	 * undoRedo list points to itself, and the next pointer of
 	 * the last node points to NULL */
-
-	if (isFirst) {
-		newNode->prev = NULL;
-	} else {
-		newNode->prev = (*current);
-	}
-
+	newNode->prev = (*current);
 	newNode->next = NULL;
 
-	/* terminate nodes from current forward (exclusive),
+	/* if it's not first, terminate nodes from current forward (exclusive),
 	 * set current next as newNode*/
 	if (!isFirst) {
 		terminate((*current)->next);
 		(*current)->next = newNode;
 	}
 
+	/* finally set new node as current node */
 	*current = newNode;
 }
 
-/* Copies a game state (flags and board) from a node adjacent to current (node->next or
- * node->prev), and set current to the node of the new state. */
-void undoRedo(game *gptr, node **current, int *flags, int undo) {
-
-	/* local node that will hold current. if redo
-	 * xor current.prev if undo */
-	node *local_node;
-
-	/* if undo and no previous move or redo and no next, return error*/
-	if ((!undo && (*current)->next == NULL)
-			|| (undo && (*current)->prev == NULL)) {
-		printf("Error, no move available to %s\n",
-				(undo ? "undo" : "redo"));
-		flags[INVALID_USER_COMMAND] = 1;
+void undo_aux(game *gptr, node **current, int *flags, int print_bool) {
+	/* if first node, no move to undo */
+	if ((*current)->prev == NULL) {
+		printf("Error, original board, no move to undo\n");
 		return;
 	}
 
-	if (undo) {
-		local_node = (*current)->prev;
-	} else {
-		local_node = (*current)->next;
+	/* else, copy old values from changes list to gptr->user, print changes
+	 * (if flag is 1) and move pointer backwards */
+	copy_changes(gptr, (*current)->changes, (*current)->changesLen, 1);
+
+	/* print changes if necessary (undo command and not reset) */
+	if (print_bool) {
+		print_changes((*current)->changes, (*current)->changesLen,1);
 	}
 
-	/* copy board - TODO what about flag board?
-	 * maybe update errors after allocation */
-	copy_board(gptr, local_node->nodeBoard, 1, 0);
+	/* move back pointer*/
+	*current = (*current)->prev;
 
-	/* copy flags */
-	copy_1d_array(flags, local_node->flagArray, NUM_FLAGS);
+}
 
-	/* current pointer now points to previous move */
-	*current = local_node;
+void redo_aux(game *gptr, node **current, int *flags) {
+	/* if last node, no move to redo */
+	if ((*current)->next == NULL) {
+		printf("Error, no move to redo\n");
+		return;
+	}
+
+	/* else, move pointer forward */
+	*current = (*current)->next;
+
+	/* else, copy new values from changes list to gptr->user, print changes
+	 * (if flag is 1) and move pointer backwards */
+	copy_changes(gptr, (*current)->changes, (*current)->changesLen, 0);
+
+	/* print changes */
+	print_changes((*current)->changes, (*current)->changesLen,0);
+
 }
 
 /* allocate new nodeBoard from recently changed board
  * append new node with recent data */
-void commit_move(node **current, game *gptr, int *flags, int isFirst) {
-	int **nodeBoard = NULL;
+void commit_move(node **currentNode, game *gptr, int **old_board, int *flags,
+		int isFirst) {
+	int changes_num;
+	int **changes = NULL;
 
-	nodeBoard = init_2d_array(gptr->sideLength);
-	copy_board(gptr, nodeBoard, 0, 0);
-	append(current, nodeBoard, flags, isFirst, gptr->sideLength);
+
+	/* if old_board is NULL, it's the NULL node after loading a new board
+	 * no need to to calculate changes. set first node as NULL and return  */
+	if (old_board == NULL) {
+		append(currentNode, NULL, flags, 1, 0);
+		return;
+	}
+
+	/* else, get changes and append new node with changes */
+	changes = get_changes_list(old_board, gptr->user, gptr->sideLength,
+			&changes_num);
+
+
+	append(currentNode, changes, flags, isFirst, changes_num);
+
+
 }
 
 /* Prints the difference in nodeBoards between source node and destination node.
  * If no changes were detected between the nodes, indicates that by a printed message.
- * TODO discuss message format. */
-void print_diff_nodes(node *source,node *dest){
-	int i, j, changeExist = 0;
-	int **sourceBoard = source->nodeBoard;
-	int **destBoard = dest->nodeBoard;
+ * TODO discuss message format.  DELETE TODO
+ void print_diff_nodes(node *source, node *dest) {
+ int i, j, changeExist = 0;
+ int **sourceBoard = source->nodeBoard;
+ int **destBoard = dest->nodeBoard;
 
-	for (i=0; i<source->sideLength; i++) {
-		for (j=0; j<source->sideLength; j++) {
-			printf("	Cell [%d, %d] changed from %d to %d.\n", j, i, sourceBoard[i][j], destBoard[i][j]);
-			changeExist = 1;
-		}
-	}
+ for (i = 0; i < source->sideLength; i++) {
+ for (j = 0; j < source->sideLength; j++) {
+ printf("	Cell [%d, %d] changed from %d to %d.\n", j, i,
+ sourceBoard[i][j], destBoard[i][j]);
+ changeExist = 1;
+ }
+ }
 
-	if (!changeExist) {
-		printf("	No changes to the board.\n");
-	}
-}
-
+ if (!changeExist) {
+ printf("	No changes to the board.\n");
+ }
+ }*/
 
 /*---------debugging-----------------------------------------------------*/
 /*TODO REMOVE- for debugging purposes only*/
 void print_current_node(node *Node, node *current, game *gptr) {
-	int j;
+
+	printf("\nPrinting node\n");
 
 	if (current == NULL) {
 		printf("ERROR - current IS NULL! \nEXITING...\n");
@@ -167,13 +299,7 @@ void print_current_node(node *Node, node *current, game *gptr) {
 	printf("%s", (Node->next == NULL ? "Last\n" : ""));
 	printf("%s", (Node == current ? "Current\n" : ""));
 
-	print_matrix(Node->nodeBoard, gptr->sideLength);
-	if (!(Node->next == NULL)) {
-		for (j = 0; j < 4; j++) {
-			printf("\t||\n");
-		}
-		printf("\t\\/");
-	}
+	print_changes(Node->changes, Node->changesLen,0);
 
 }
 

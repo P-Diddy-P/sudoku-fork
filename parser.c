@@ -6,27 +6,11 @@
  *
  *
  *
- * Parser module purpose:
- * Parsing user input, and decide if it's valid mostly SYNTACTICALLY,
- * i.e, if the command name and number of arguments are valid.
- * THAT SAID, because game-mode dependent errors need to be printed to
- * user without regard to correctness of arguments.
- * For example, using the command "generate" in SOLVE_STR mode should result in error,
- * without regard to the rest of the arguments.
- * The correctness of the arguments in regard to board dimensions,
- * current cell value and so on, will be treated in user_op module.
  */
 
-# include <stdlib.h>
-# include <stdio.h>
-# include <string.h>
-# include <errno.h>
-#include <stdarg.h>
+# include "parser.h"
 
-# include "auxi.h"
 
-# define BUFF_SIZE 257
-# define DELIM " \t\r\n"
 
 /* reads line until first newline char encountered,
  * using fgets on the standard input. if line is not longer
@@ -118,6 +102,7 @@ void parse_print_command_correct_args(int* flags) {
 void parse_print_command_modes_error(int num_args, ...) {
 	int k;
 	char **to_print = calloc(num_args, sizeof(char*));
+	memory_alloc_error();
 
 	/* init variable length argument list */
 	va_list list;
@@ -126,14 +111,11 @@ void parse_print_command_modes_error(int num_args, ...) {
 	/* allocate string array and copy strings */
 	for (k = 0; k < num_args; k++) {
 		to_print[k] = calloc(50, sizeof(char));
+		memory_alloc_error();
 		strcpy(to_print[k], va_arg(list, char*));
 	}
 	va_end(list);
 
-	if (errno) {
-		printf("Error during game memory allocation.\n");
-		exit(errno);
-	}
 
 	/* print error */
 	printf("Command %s not available in current mode"
@@ -198,6 +180,8 @@ void parse_command_path(int* flags, char* token, char *strings[],
 
 	path = calloc(258, sizeof(char));
 
+	memory_alloc_error();
+
 	for (k = 0; k < 600; k++) {
 		if (token[k] == 0) {
 			break;
@@ -242,10 +226,7 @@ void parse_command_args(int* flags, char *strings[], char* token, int num_args) 
 		/* If token not NULL, dynamically allocate space for string in strings array
 		 * TODO need to free after each user prompt the strings array*/
 		str = calloc(strlen(token), sizeof(char));
-		if (errno) {
-			printf("Error during game memory allocation.\n");
-			exit(errno);
-		}
+		memory_alloc_error();
 
 		strcpy(str, token);
 
@@ -502,7 +483,7 @@ void parse_user(int *flags, char *strings[]) {
 	if (flags[INVALID_LINE_LENGTH]) {
 		printf(
 				"Command length invalid, at most 256 characters per line are allowed\n");
-
+		flags[INVALID_USER_COMMAND]=1;
 		/* return and prompt user for another line (part of game flow)*/
 		return;
 	}

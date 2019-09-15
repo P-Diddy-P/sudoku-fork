@@ -13,8 +13,7 @@
  *		is a valid board in regard for board validity and game mode.
  */
 
-# include "auxi.h"
-# include "gameStruct.h"
+# include "fileIO.h"
 
 /* ----------------------------------------
  * ----------------------------------------
@@ -236,8 +235,17 @@ void load_next_number(FILE *fp, game *local_gptr, int *flags, int i, int j) {
 		return;
 	}
 
-	/* number is valid for board, write it into the local game user and flags*/
+	/* if number is zero and has a dot, it's invalid format error
+	 * (fixed cells cannot be empty). note that this a different
+	 * error than a single dot without a number - that's just a
+	 */
+	if ((get_int == 0) && (dot)) {
+		printf("Error, cannot load file with fixed empty cell\n");
+		flags[LOAD_IS_INVALID_FORMAT] = 1;
+		return;
+	}
 
+	/* number is valid for board, write it into the local game user and flags*/
 	local_gptr->user[i][j] = get_int;
 	local_gptr->flag[i][j] = dot;
 
@@ -316,7 +324,6 @@ int load_get_dimensions(FILE *fp, game *local_gptr, int *flags) {
 	rows = atoi(rows_str);
 	cols = atoi(cols_str);
 
-
 	/* free strings allocated*/
 	free(rows_str);
 	free(cols_str);
@@ -331,11 +338,9 @@ int load_get_dimensions(FILE *fp, game *local_gptr, int *flags) {
 
 	/* dimensions read succussfully, load them into the local game*/
 
-
 	local_gptr->rows = rows;
 	local_gptr->cols = cols;
 	local_gptr->sideLength = rows * cols;
-
 
 	/* free strings allocated*/
 
@@ -395,7 +400,7 @@ int load_open_file(FILE *fp, int *flags, char **strings) {
 
 	/* print error if file not found*/
 	if (errno == NO_FILE) {/* NO_FILE==2 is errno code for "No such file" */
-		errno=0; /* reset errno after failure - otherwise it will cause memory faliure */
+		errno = 0; /* reset errno after failure - otherwise it will cause memory faliure */
 		/* TODO - is setting errno valid? */
 		printf("Error, file not found\n");
 		flags[INVALID_USER_COMMAND] = 1;
@@ -408,19 +413,18 @@ int load_open_file(FILE *fp, int *flags, char **strings) {
 /* Try to access file with path, read dimensions,
  * initialize board
  * */
-void load_board(game *local_gptr,int *flags,char **strings, node **currentMove) {
+void load_board(game *local_gptr, int *flags, char **strings) {
 	FILE *fp;
 
 	/*
-	game load_game;
-	game *load_gptr;
+	 game load_game;
+	 game *load_gptr;
 
-	load_gptr = &load_game;
-	*/
+	 load_gptr = &load_game;
+	 */
 
 	/* try to find file using path from user*/
 	fp = fopen(strings[PATH], "r");
-
 
 	/* check if file opened correctly, return on error if not */
 	if (!load_open_file(fp, flags, strings)) {
@@ -435,13 +439,12 @@ void load_board(game *local_gptr,int *flags,char **strings, node **currentMove) 
 	/* init board with dimensions read */
 	init_board(local_gptr, local_gptr->rows, local_gptr->cols);
 
-	/* if successful, return pointer */
+	/* load entries */
 	if (load_entries(local_gptr, fp, flags)) {
 
 		return;
 	}
 
-	/* else, return null*/
 	flags[INVALID_USER_COMMAND] = 1;
 	return;
 
@@ -554,7 +557,7 @@ void save_write_lines(FILE *fp, game *gptr, int *flags) {
 
 /* Receives a VALID board to write, in regard to current mode,
  * and writes to path, if exists*/
-void save_board(ARGS_DEF_FUNC) {
+void save_board(game *gptr, int *flags, char **strings) {
 
 	/* define file pointer*/
 	FILE *fp;

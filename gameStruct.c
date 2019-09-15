@@ -1,5 +1,4 @@
 #include "gameStruct.h"
-#include "auxi.h"
 
 /***********************************************************************/
 /* TODO PRIVATE FUNCTIONS - SHOULD NOT BE INCLUDED IN HEADER FILE TODO */
@@ -93,7 +92,6 @@ void check_column_for_errors(game *gptr, int **errorBoard, int colId) {
 		}
 	}
 }
-
 /* Indexing explained:
  * si and sj mark the first cell in the block (top left). Those remain static throughout the function.
  * ci and cj mark the current cell being compared to subsequent cells (marked with coords ri and rj),
@@ -262,11 +260,15 @@ void init_board(game * gptr, int rows, int cols) {
 	}
 	/* changed to calloc from malloc */
 	gptr->user = calloc(gptr->sideLength, sizeof(int *));
+	memory_alloc_error();
 	gptr->flag = calloc(gptr->sideLength, sizeof(int *));
+	memory_alloc_error();
 
 	for (i = 0; i < gptr->sideLength; i++) {
 		gptr->user[i] = calloc(gptr->sideLength, sizeof(int));
+		memory_alloc_error();
 		gptr->flag[i] = calloc(gptr->sideLength, sizeof(int));
+		memory_alloc_error();
 	}
 
 	/* compound statement check for memory allocation errors */
@@ -355,8 +357,10 @@ void update_random(game *gptr, int seed, int addFlags) {
 int update_board_errors(game *gptr) {
 	int i, j, errorsInBoard = 0;
 	int **validationBoard = malloc(gptr->sideLength * sizeof(int *));
+	memory_alloc_error();
 	for (i = 0; i < gptr->sideLength; i++) {
 		validationBoard[i] = calloc(gptr->sideLength, sizeof(int *));
+		memory_alloc_error();
 	}
 
 	for (i = 0; i < gptr->sideLength; i++) {
@@ -417,14 +421,13 @@ int** init_2d_array(int sideLength) {
 
 	mat = calloc(sideLength, sizeof(int *));
 
+	memory_alloc_error();
+
 	for (i = 0; i < sideLength; i++) {
 		mat[i] = calloc(sideLength, sizeof(int));
+		memory_alloc_error();
 	}
 
-	if (errno) {
-		printf("Error during game memory allocation.\n");
-		exit(errno);
-	}
 
 	return mat;
 }
@@ -489,4 +492,20 @@ int is_board_full(game *gptr) {
 	return 1;
 
 }
+
+int count_empty(int **board, int sideLength){
+	int i,j, counter=0;
+
+	for (i=0;i<sideLength;i++){
+		for (j=0;j<sideLength;j++){
+			if (!board[i][j]){
+				counter+=1;
+			}
+		}
+	}
+
+
+	return counter;
+}
+
 

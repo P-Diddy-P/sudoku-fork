@@ -26,6 +26,7 @@ int auto_complete(game *gptr) {
 	int currentRow = 0, currentCol = 0;
 	int svPlaceholder = 0, cellsFilled = 0;
 	int *stkres = malloc(3 * sizeof(int));
+
 	stack stk;
 	stack *stkptr = &stk;
 

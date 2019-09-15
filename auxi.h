@@ -7,13 +7,8 @@
 
 #ifndef AUXI_H_
 #define AUXI_H_
-# include <stdlib.h>
-# include <stdio.h>
-# include <string.h>
-# include <errno.h>
-# include <stdarg.h>
-# include <ctype.h>
-#include <math.h>
+
+# include "errors.h"
 
 
 /*constants definitions*/
@@ -25,8 +20,7 @@
 # define END_OF_FILE 1
 # define FALSE 0
 # define TRUE 1
-# define ARGS_PASS_FUNC gptr,flags,strings,currentMove
-# define ARGS_DEF_FUNC game *gptr,int *flags,char **strings, node **currentMove
+
 
 
 /*								FLAGS ARRAY						*/

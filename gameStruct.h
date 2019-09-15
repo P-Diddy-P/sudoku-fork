@@ -1,8 +1,7 @@
 #ifndef GAMESTRUCT_H_
 #define GAMESTRUCT_H_
 
-#include <stdio.h>
-#include <stdlib.h>
+# include "auxi.h"
 /* Constant identifiers for fixed values and error values in the board */
 #define					VALID  0
 #define 				FIXED  1
@@ -25,8 +24,6 @@
  *
  * Changed: added currentMove pointer to game struct
  * */
-
-typedef struct node node;
 
 
 typedef struct game {
@@ -109,6 +106,8 @@ void free_2d_array(int **mat,int sideLength);
 
 int** init_2d_array(int sideLength);
 
+int count_empty(int **board, int sideLength);
+
 /* TODO - for debugging purposes, delete in the end */
 void print_matrix(int **mat, int sideLength);
 
@@ -116,7 +115,9 @@ void copy_1d_array(int *copy_to, int*copy_from, int num_elements);
 void copy_2d_array(int **copy_to, int **copy_from, int side);
 void assign_game_pointer(game *gptr,game *assign);
 
-
+int row_valid_value(game *gptr, int row, int value);
+int col_valid_value(game *gptr, int col, int value);
+int block_valid_value(game *gptr, int valueRow, int valueCol, int value);
 
 
 

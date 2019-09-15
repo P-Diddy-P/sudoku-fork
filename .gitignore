@@ -1,5 +1,4 @@
 # currently ignore main.c, as it is used for running tests
-main.c
 SPBufferset.h
 
 # ignore eclipse generated and text files
@@ -7,4 +6,7 @@ SPBufferset.h
 .project
 .cproject
 .settings
+gurobi_c.h
 *.txt
+Debug/
+Release/

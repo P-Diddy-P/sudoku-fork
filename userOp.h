@@ -8,14 +8,30 @@
 #ifndef USEROP_H_
 #define USEROP_H_
 
-# include "auxi.h"
-# include "gameStruct.h"
+#include "fileIO.h"
+#include "autocomplete.h"
+#include "stackTracking.h"
+#include "undoRedo.h"
+#include "ILPsolver.h"
+#include "LPsolver.h"
+
+/* every operation-function receives as arguments the game pointer, flags int array,
+ * strings array and currentMove pointer */
+# define NUM_OPS 17
+
+
+# define ARGS_PASS_FUNC gptr,flags,strings,currentMove,env
+# define ARGS_DEF_FUNC game *gptr,int *flags,char **strings, node **currentMove, GRBenv *env
+
+/* Every operation receives as arguments gptr, flags, strings and pointer to current node*/
+typedef void (*f)(game*, int*, char**, node**,GRBenv*);
 
 /*one public function user_op, recieves the game and user command
  * and operates upon the game*/
 
-int user_op(game *gptr, int *flags, char **strings, node **currentMove);
+void user_op(game *gptr, int *flags, char **strings, node **currentMove,GRBenv *env);
 
 void print_art();
+
 
 #endif /* USEROP_H_ */

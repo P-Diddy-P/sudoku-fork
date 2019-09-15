@@ -8,13 +8,12 @@
 #ifndef FILEIO_H_
 #define FILEIO_H_
 
-# include "auxi.h"
-# include "gameStruct.h"
+# include "gurobi_interface.h"
 
 /* CHANGED - load_board now gets */
-void load_board(game *local_gptr,int *flags,char **strings, node **currentMove);
+void load_board(game *local_gptr,int *flags,char **strings);
 
-int save_board(ARGS_DEF_FUNC);
+void save_board(game *gptr,int *flags,char **strings);
 
 int load_is_str_zero(char *str);
 
