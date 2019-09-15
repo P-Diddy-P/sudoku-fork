@@ -7,14 +7,10 @@
 
 #ifndef ERRORS_H_
 #define ERRORS_H_
-# include <stdlib.h>
-# include <stdio.h>
-# include <string.h>
-# include <errno.h>
-# include <stdarg.h>
-# include <ctype.h>
-# include <math.h>
-# include <time.h>
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <errno.h>
 
 /* Module purpose:
  * 	include s error functions to be used by all modules.

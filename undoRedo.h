@@ -29,8 +29,8 @@ void commit_move(node **currentNode, game *gptr,int **old, int *flags, int isFir
  * - undo: first copy old values, print to user the changes (if functions
  * was not called from reset), and move back pointer
  * - redo: first move current pointer forward, then copy values from new. */
-void undo_aux(game *gptr, node **current, int *flags, int print_bool);
-void redo_aux(game *gptr, node **current, int *flags);
+void undo_aux(game *gptr, node **current, int print_bool);
+void redo_aux(game *gptr, node **current);
 
 /* print changes from currentMove node */
 void print_changes(int **changes, int changes_num, int undo);
@@ -44,7 +44,7 @@ void free_node(node *delNode);
 
 
 /*--------------------TODO remove in the end-----------------------*/
-void print_current_node(node *Node, node *currentMove,game *gptr);
-void print_history(node *currentMove,game *gptr);
+void print_current_node(node *Node, node *currentMove);
+void print_history(node *currentMove);
 
 #endif /* UNDOREDO_H_ */

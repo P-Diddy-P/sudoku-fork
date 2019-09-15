@@ -12,6 +12,4 @@ void memory_alloc_error(){
 		printf("Error during game memory allocation\n");
 		exit(errno);
 	}
-
-
 }

@@ -2,6 +2,7 @@
 #define GAMESTRUCT_H_
 
 # include "auxi.h"
+# include "errors.h"
 /* Constant identifiers for fixed values and error values in the board */
 #define					VALID  0
 #define 				FIXED  1
@@ -46,16 +47,12 @@ void init_board(game * gptr, int rows, int cols);
  * NOTE - pointer passed to init_board must be already initialized.
  * gptr pointing to null will result in undefined behavior */
 
-void print_board_aux(game *gptr, int *flags);
+void print_board(game *gptr, int *flags);
 /* Prints the game board, including error marks and fixed values */
 
 void update_board(game *gptr, int len, int *rowIds, int *colIds, int *values, int * flags);
 /* Inserts values from array to the board for debug purposes. a flags array doesn't have to
  * be provided (can be replaced by null pointer) */
-
-void update_random(game *gptr, int seed, int addFlags); /* TODO: debug function, remove before submitting */
-/* Fills the board entirely with random values according to a predefined seed. Can also fill
- * flags randomly. NOTE: addFlags must be binary (0 or 1)! */
 
 int update_board_errors(game *gptr);
 /* Checks the entire board for errors in row, column and block and returns 0 for no errors, 1 otherwise.

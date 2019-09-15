@@ -21,27 +21,8 @@
  * --------- LOAD BOARD FUNCTIONS ---------
  * ----------------------------------------
  * ----------------------------------------*/
-/* Check next char in stream is the end of file
- * TODO - maybe remove, unused */
-int load_is_next_char_EOF(int *flags, FILE *fp, int inp) {
-	char c;
-
-	c = fgetc(fp); /* get next char*/
-
-	if (feof(fp)) { /* if EOF reached, update flags and return True*/
-		flags[LOAD_IS_EOF] = 1;
-		return 1;
-	}
-
-	else {/* if not, push char to stream, return false*/
-		ungetc(c, fp);
-		return 0;
-	}
-
-}
-
 /* Check if next char in stream is whitespace */
-int load_is_next_char_space(int *flags, FILE *fp) {
+int load_is_next_char_space(FILE *fp) {
 	char c;
 
 	/* get next char*/
@@ -59,10 +40,10 @@ int load_is_next_char_space(int *flags, FILE *fp) {
 
 /* Advance pointer over whitespace characters until EOF
  * or non-whitespace char reached*/
-void load_advance_whitespace(int *flags, FILE *fp) {
+void load_advance_whitespace(FILE *fp) {
 
 	/* as long as there's a whitespace, continue reading chars from stream*/
-	while (load_is_next_char_space(flags, fp)) {
+	while (load_is_next_char_space(fp)) {
 		continue;
 	}
 
@@ -78,7 +59,7 @@ char* load_get_next_token(int *flags, FILE *fp) {
 
 	/* advance stream pointer to first non
 	 * whitespace char*/
-	load_advance_whitespace(flags, fp);
+	load_advance_whitespace(fp);
 
 	/* if EOF reached, flag and return */
 	if (feof(fp)) {
@@ -284,7 +265,7 @@ int load_get_dimensions(FILE *fp, game *local_gptr, int *flags) {
 	int rows, cols;
 
 	/* advance first whitespaces */
-	load_advance_whitespace(flags, fp);
+	load_advance_whitespace(fp);
 
 	if (feof(fp)) {
 		printf("Error, not enough dimensions parameters\n");
@@ -354,7 +335,7 @@ int load_get_dimensions(FILE *fp, game *local_gptr, int *flags) {
 int load_is_file_over(FILE *fp, int *flags) {
 
 	/* advnace whitespaces */
-	load_advance_whitespace(flags, fp);
+	load_advance_whitespace(fp);
 
 	/* if there isn't an EOF after the whitespaces,
 	 * return error*/
@@ -396,17 +377,15 @@ int load_entries(game *local_gptr, FILE *fp, int *flags) {
 }
 
 /* Return error if file opening failed */
-int load_open_file(FILE *fp, int *flags, char **strings) {
+int load_open_file(int *flags) {
 
 	/* print error if file not found*/
 	if (errno == NO_FILE) {/* NO_FILE==2 is errno code for "No such file" */
 		errno = 0; /* reset errno after failure - otherwise it will cause memory faliure */
-		/* TODO - is setting errno valid? */
 		printf("Error, file not found\n");
 		flags[INVALID_USER_COMMAND] = 1;
 		return 0;
 	}
-
 	return 1;
 }
 
@@ -427,7 +406,7 @@ void load_board(game *local_gptr, int *flags, char **strings) {
 	fp = fopen(strings[PATH], "r");
 
 	/* check if file opened correctly, return on error if not */
-	if (!load_open_file(fp, flags, strings)) {
+	if (!load_open_file(flags)) {
 		return;
 	}
 
@@ -495,9 +474,9 @@ void save_write_dims(FILE *fp, game *gptr) {
 	n_str = save_get_str(gptr->cols);
 
 	/* write "m n \n" to file*/
-	fprintf(fp, m_str);
+	fprintf(fp, "%s", m_str);
 	fputc(32, fp);
-	fprintf(fp, n_str);
+	fprintf(fp, "%s", n_str);
 	fputc(32, fp);
 	fputc(10, fp);
 
@@ -526,7 +505,7 @@ void save_write_num(FILE *fp, game *gptr, int *flags, int i, int j) {
 	}
 
 	/* write number*/
-	fprintf(fp, to_write);
+	fprintf(fp, "%s", to_write);
 
 	/* if not zero and dot flag is up, write dot */
 	if (is_not_zero && is_dot) {

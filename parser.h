@@ -19,6 +19,7 @@
 #ifndef PARSER_H_
 #define PARSER_H_
 # include "auxi.h"
+# include "errors.h"
 
 # define BUFF_SIZE 257
 # define DELIM " \t\r\n"

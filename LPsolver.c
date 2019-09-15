@@ -113,7 +113,7 @@ int fill_cell(game *gptr, double *value_prob, int row, int col, float threshold)
 /******************************************************************************/
 /******************************************************************************/
 
-int guess_hint_aux(game *gptr, int row, int col,GRBenv *env) {
+int guess_hint_aux(game *gptr, int row, int col, GRBenv *env) {
     int i, empty_cells, objective_value, hint_cell;
     int **cell_map = NULL;
     double *solution_probs = NULL;
@@ -157,7 +157,7 @@ int guess_hint_aux(game *gptr, int row, int col,GRBenv *env) {
     return 0;
 }
 
-int guess_aux(game *gptr, float threshold,GRBenv *env) {
+int guess_aux(game *gptr, float threshold, GRBenv *env) {
     int i, empty_cells, objective_value, filled_cells = 0;
     int **cell_map = NULL;
     double *solution_probs = NULL;

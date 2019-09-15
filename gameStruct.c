@@ -293,7 +293,7 @@ void init_board(game * gptr, int rows, int cols) {
 	}
 }
 
-void print_board_aux(game *gptr, int *flags) {
+void print_board(game *gptr, int *flags) {
 	int dashLength = 4 * gptr->sideLength + gptr->rows + 1;
 	int i, j; /* iteration variables: i for current row, j for current column */
 
@@ -341,19 +341,6 @@ void update_board(game *gptr, int len, int *rowIds, int *colIds, int *values,
 	}
 }
 
-/* TODO debug function. remove from final product */
-void update_random(game *gptr, int seed, int addFlags) {
-	srand(seed);
-	int i, j;
-
-	for (i = 0; i < gptr->sideLength; i++) {
-		for (j = 0; j < gptr->sideLength; j++) {
-			gptr->user[i][j] = rand() % gptr->sideLength + 1;
-			gptr->flag[i][j] = (rand() % 2) * addFlags;
-		}
-	}
-}
-
 int update_board_errors(game *gptr) {
 	int i, j, errorsInBoard = 0;
 	int **validationBoard = malloc(gptr->sideLength * sizeof(int *));
@@ -394,12 +381,12 @@ int board_has_errors(game *gptr) {
 }
 
 int check_valid_value(game *gptr, int row, int col, int value) {
-	int tmp = gptr->user[row][col];
+	int rowValid, colValid, blockValid, tmp = gptr->user[row][col];
 	gptr->user[row][col] = 0;
 
-	int rowValid = row_valid_value(gptr, row, value);
-	int colValid = col_valid_value(gptr, col, value);
-	int blockValid = block_valid_value(gptr, row, col, value);
+	rowValid = row_valid_value(gptr, row, value);
+	colValid = col_valid_value(gptr, col, value);
+	blockValid = block_valid_value(gptr, row, col, value);
 
 	gptr->user[row][col] = tmp;
 	return (rowValid && colValid && blockValid);

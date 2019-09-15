@@ -198,7 +198,7 @@ void append(node **current, int **changes, int *flags, int isFirst,
 	*current = newNode;
 }
 
-void undo_aux(game *gptr, node **current, int *flags, int print_bool) {
+void undo_aux(game *gptr, node **current, int print_bool) {
 	/* if first node, no move to undo */
 	if ((*current)->prev == NULL) {
 		printf("Error, original board, no move to undo\n");
@@ -219,7 +219,7 @@ void undo_aux(game *gptr, node **current, int *flags, int print_bool) {
 
 }
 
-void redo_aux(game *gptr, node **current, int *flags) {
+void redo_aux(game *gptr, node **current) {
 	/* if last node, no move to redo */
 	if ((*current)->next == NULL) {
 		printf("Error, no move to redo\n");
@@ -231,6 +231,7 @@ void redo_aux(game *gptr, node **current, int *flags) {
 
 	/* else, copy new values from changes list to gptr->user, print changes
 	 * (if flag is 1) and move pointer backwards */
+	/* TODO what about copying flags? */
 	copy_changes(gptr, (*current)->changes, (*current)->changesLen, 0);
 
 	/* print changes */
@@ -286,7 +287,7 @@ void commit_move(node **currentNode, game *gptr, int **old_board, int *flags,
 
 /*---------debugging-----------------------------------------------------*/
 /*TODO REMOVE- for debugging purposes only*/
-void print_current_node(node *Node, node *current, game *gptr) {
+void print_current_node(node *Node, node *current) {
 
 	printf("\nPrinting node\n");
 
@@ -304,14 +305,14 @@ void print_current_node(node *Node, node *current, game *gptr) {
 }
 
 /*TODO REMOVE- for debugging purposes only*/
-void print_history(node *currentNode, game *gptr) {
+void print_history(node *currentNode) {
 	int k;
 	node *current;
 
 	printf("--------MOVES HISTORY-------\n");
 	if (currentNode->next == NULL && currentNode->prev == NULL) {
 		printf("Single node in list, printing..\n");
-		print_current_node(currentNode, currentNode, gptr);
+		print_current_node(currentNode, currentNode);
 		return;
 	}
 
@@ -333,7 +334,7 @@ void print_history(node *currentNode, game *gptr) {
 			exit(0);
 		}
 		printf("\n---------Move %d----------\n", k);
-		print_current_node(current, currentNode, gptr);
+		print_current_node(current, currentNode);
 		current = current->next;
 		k++;
 	}

@@ -8,7 +8,14 @@
 #ifndef AUXI_H_
 #define AUXI_H_
 
-# include "errors.h"
+# include <stdlib.h>
+# include <stdio.h>
+# include <string.h>
+# include <errno.h>
+# include <stdarg.h>
+# include <ctype.h>
+# include <math.h>
+# include <time.h>
 
 
 /*constants definitions*/

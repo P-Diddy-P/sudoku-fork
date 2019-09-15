@@ -101,11 +101,11 @@ void parse_print_command_correct_args(int* flags) {
  * can get 1 or 2 modes in which the commnad is available.*/
 void parse_print_command_modes_error(int num_args, ...) {
 	int k;
+	va_list list;
 	char **to_print = calloc(num_args, sizeof(char*));
 	memory_alloc_error();
 
 	/* init variable length argument list */
-	va_list list;
 	va_start(list, num_args);
 
 	/* allocate string array and copy strings */
@@ -134,9 +134,9 @@ void parse_print_command_modes_error(int num_args, ...) {
 
 /* return true if token consists only of whitespace characters */
 int is_token_ws(char *str) {
-	int k;
+	int k, length = (int) strlen(str);
 
-	for (k = 0; k < strlen(str); k++) {
+	for (k = 0; k < length; k++) {
 		if (!isspace(str[k])) {
 			return 0;
 		}

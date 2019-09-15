@@ -20,8 +20,8 @@
 # define NUM_OPS 17
 
 
-# define ARGS_PASS_FUNC gptr,flags,strings,currentMove,env
-# define ARGS_DEF_FUNC game *gptr,int *flags,char **strings, node **currentMove, GRBenv *env
+# define ARGS_PASS_FUNC gptr, flags, strings, currentMove, env
+# define ARGS_DEF_FUNC game *gptr, int *flags, char **strings, node **currentMove, GRBenv *env
 
 /* Every operation receives as arguments gptr, flags, strings and pointer to current node*/
 typedef void (*f)(game*, int*, char**, node**,GRBenv*);

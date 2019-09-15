@@ -82,7 +82,7 @@ char* print_arg_name(int arg) {
 }
 
 /* Parse argument to int */
-int get_int_from_str(game *gptr,int *flags,char **strings, node **currentMove, int arg) {
+int get_int_from_str(int *flags,char **strings, int arg) {
 	int get_int;
 
 	/* check if string is zero */
@@ -103,7 +103,7 @@ int get_int_from_str(game *gptr,int *flags,char **strings, node **currentMove, i
 			print_arg_name(arg), strings[USER_COMMAND_NAME]);
 
 	flags[INVALID_USER_COMMAND] = 1;
-	return NULL;
+	return -1;
 }
 
 /* Frees all nodes currently in list, including current one
@@ -116,7 +116,6 @@ void init_new_undoRedo(game *gptr, node **current, int *flags) {
 
 	/* set current as NULL pointer - TODO check */
 	(*current) = NULL;
-	;
 
 	/* commit move - create list with new node
 	 * currentMove now points to newly created node */
@@ -142,7 +141,7 @@ int is_game_over(game *gptr, int *flags) {
 	update_board_errors(gptr);
 	if (!board_has_errors(gptr)) {
 		flags[IS_SOLVED] = 1;
-		print_board_aux(gptr, flags);
+		print_board(gptr, flags);
 		printf("Puzzle was solved successfully!\nMode is Now Init\n");
 
 		/* set mode to init*/
@@ -165,7 +164,7 @@ int is_game_over(game *gptr, int *flags) {
 
 /* Using file-I/O module to load game from file,
  * update game mode to solve */
-void solve(ARGS_DEF_FUNC) {
+void solve(game *gptr, int *flags, char **strings, node **currentMove) {
 
 	/* init local game pointer and try to load board */
 	game local_game;
@@ -191,8 +190,6 @@ void solve(ARGS_DEF_FUNC) {
 		return;
 	}
 
-	/* (need to check if solvable? TODO) */
-
 	/* if board is valid and not erroneous, free old gptr memory and copy new
 	 * data from loaded game */
 	free_game_pointer(gptr);
@@ -210,13 +207,11 @@ void solve(ARGS_DEF_FUNC) {
 	/* initialize new empty undoRedo list with new board */
 	init_new_undoRedo(gptr, currentMove, flags);
 
-	/* check if board is solved functionality
-	 * TODO - create function is_solved */
-
-	/* print board after operation - TODO need to?*/
 	printf("Loaded board in Solve mode\n");
-	print_board_aux(gptr, flags);
+	print_board(gptr, flags);
 
+	/* check if board is solved functionality*/
+	is_game_over(gptr, flags);
 }
 
 /*--------------Edit---------------*/
@@ -224,7 +219,7 @@ void solve(ARGS_DEF_FUNC) {
 /* Edit operation -
  * if no path provided, load new empty 9X9 board
  * else load board from file, if exists and not erroneous */
-void edit(ARGS_DEF_FUNC) {
+void edit(game *gptr, int *flags, char **strings, node **currentMove) {
 	/* create local game for loading from file and testing */
 	game local_game;
 	game *local_gptr;
@@ -269,23 +264,22 @@ void edit(ARGS_DEF_FUNC) {
 	/* initialize new empty undoRedo list with new board */
 	init_new_undoRedo(gptr, currentMove, flags);
 
-	update_board_errors(gptr);/* TODO - need?*/
+	update_board_errors(gptr);
 
-	/* print board after operation - TODO need to?*/
 	printf("Loaded board in Edit mode\n");
-	print_board_aux(gptr, flags);
+	print_board(gptr, flags);
 
-	/* check if board is solved functionality like in solve X?
-	 * TODO - create function is_solved*/
+	/* unnecessary to check if the board is solved, no matter if it is full and
+	 * solved or full but erroneous, we should still be able to edit it. */
 }
 
 /*------------Mark errors----------*/
 /* TODO changing the mark_errors bit */
-void mark_errors(ARGS_DEF_FUNC) {
+void mark_errors(game *gptr,int *flags,char **strings, node **currentMove) {
 	int val;
 
 	/* try to read first argument as int */
-	val = get_int_from_str(gptr,flags,strings,currentMove, 1);
+	val = get_int_from_str(flags, strings, 1);
 
 	/* if fails, return */
 	if (val == -1) {
@@ -300,28 +294,23 @@ void mark_errors(ARGS_DEF_FUNC) {
 		return;
 	}
 
-	/* TODO when does errors are updated? */
+	/* Despite there being no changes from previous move, still update the board for errors
+	 * just to make sure */
+	update_board_errors(gptr);
 
 	if (val == 1) {
-		update_board_errors(gptr);/* TODO need to update here?*/
 		flags[MARK_ERRORS_FLAG] = 1;
-	}
-
-	if (val == 0) {
+	} else if (val == 0) {
 		flags[MARK_ERRORS_FLAG] = 0;
 	}
 
-	/* TODO undoRedo functionality? need to change flags only*/
 	commit_move(currentMove, gptr, NULL, flags, 0);
-
 }
 
 /*------------Print board----------*/
 
 /* Calls print board from gameStruct */
-void print_board(ARGS_DEF_FUNC) {
-	print_board_aux(gptr, flags);
-}
+/* This operation will call print_board from gameStruct directly */
 
 /*------------Set-----------------*/
 
@@ -334,11 +323,11 @@ int set_val_range(int arg, int argind, int lower, int upper) {
 	return 1;
 }
 
-int set_check(int *col, int *row, int *val, ARGS_DEF_FUNC) {
+int set_check(int *col, int *row, int *val, game *gptr, int *flags, char **strings) {
 
 	/* parse and check arguments, return if invalid
 	 * error messages are printed from functions */
-	*col = get_int_from_str(gptr,flags,strings,currentMove, 1);
+	*col = get_int_from_str(flags, strings, 1);
 	if (flags[INVALID_USER_COMMAND]) {
 		return 0;
 	}
@@ -348,7 +337,7 @@ int set_check(int *col, int *row, int *val, ARGS_DEF_FUNC) {
 		return 0;
 	}
 
-	*row = get_int_from_str(gptr,flags,strings,currentMove, 2);
+	*row = get_int_from_str(flags, strings, 2);
 	if (flags[INVALID_USER_COMMAND]) {
 		return 0;
 	}
@@ -357,7 +346,7 @@ int set_check(int *col, int *row, int *val, ARGS_DEF_FUNC) {
 		flags[INVALID_USER_COMMAND] = 1;
 		return 0;
 	}
-	*val = get_int_from_str(gptr,flags,strings,currentMove, 3);
+	*val = get_int_from_str(flags, strings, 3);
 
 	if (flags[INVALID_USER_COMMAND]) {
 		return 0;
@@ -370,7 +359,7 @@ int set_check(int *col, int *row, int *val, ARGS_DEF_FUNC) {
 }
 
 /* Set a value in board, check if solved */
-void set(ARGS_DEF_FUNC) {
+void set(game *gptr,int *flags,char **strings, node **currentMove) {
 
 	/* init ints to get, pass pointers to parsing and range check
 	 * declare copy to be used */
@@ -378,7 +367,7 @@ void set(ARGS_DEF_FUNC) {
 	int **old_board;
 
 	/* if error in set values or range, return on error */
-	if (!set_check(&col, &row, &val, ARGS_PASS_FUNC)) {
+	if (!set_check(&col, &row, &val, gptr, flags, strings)) {
 		flags[INVALID_USER_COMMAND] = 1;
 		return;
 	}
@@ -408,7 +397,7 @@ void set(ARGS_DEF_FUNC) {
 	}
 
 	/* print board after operation */
-	print_board_aux(gptr, flags);
+	print_board(gptr, flags);
 
 	/* commit move to list with old board */
 	commit_move(currentMove, gptr, old_board, flags, 0);
@@ -419,7 +408,7 @@ void set(ARGS_DEF_FUNC) {
 /*------------Validate-----------------*/
 
 /* Check if board is solvable */
-void validate(ARGS_DEF_FUNC) {
+void validate(game *gptr, int *flags, GRBenv *env) {
 	/* update board errors */
 	update_board_errors(gptr);
 
@@ -442,7 +431,7 @@ void validate(ARGS_DEF_FUNC) {
 /*------------Guess-----------------*/
 
 /* Parse argument to float */
-double get_float_from_str(ARGS_DEF_FUNC, int arg) {
+double get_float_from_str(int *flags, char **strings, int arg) {
 	double get_float;
 
 	/* check if string is zero */
@@ -450,10 +439,10 @@ double get_float_from_str(ARGS_DEF_FUNC, int arg) {
 		return 0;
 	}
 
-	/* try to convert to int with atoi */
+	/* try to convert to float with atof */
 	get_float = atof(strings[arg]);
 
-	/* if non zero, conversions successful, return int*/
+	/* if non zero, conversions successful, return float */
 	if (!get_float) {
 		return get_float;
 	}
@@ -461,13 +450,19 @@ double get_float_from_str(ARGS_DEF_FUNC, int arg) {
 	/* else, return -1, error value*/
 	printf("Error, invalid argument for command %s. Please enter float\n",
 			strings[USER_COMMAND_NAME]);
-	return -1;
+	flags[INVALID_USER_COMMAND] = 1;
+	return -1.0;
 
 }
 
 /*TODO - */
-void guess(ARGS_DEF_FUNC) {
+void guess(game *gptr, int *flags, char **strings, node **currentMove, GRBenv *env) {
 	int **old_board;
+	float thres = get_float_from_str(flags, strings, 1);
+
+	if (flags[INVALID_USER_COMMAND]) {
+		return;
+	}
 
 	/* copy values to old_board */
 	old_board = init_2d_array(gptr->sideLength);
@@ -478,12 +473,11 @@ void guess(ARGS_DEF_FUNC) {
 		return;
 	}
 
-	/* TODO implement*/
+	guess_aux(gptr, thres, env);
 
 	/* commit move to list with old board */
 	commit_move(currentMove, gptr, old_board, flags, 0);
 	free_2d_array(old_board, gptr->sideLength);
-
 }
 
 /*------------Generate-----------------*/
@@ -550,14 +544,14 @@ void clear_all_but_y(game *gptr, int cells_to_leave) {
 }
 
 /* Generate new board */
-void generate(ARGS_DEF_FUNC) {
+void generate(game *gptr, int *flags, char **strings, node **currentMove, GRBenv *env) {
 	/* get ints X Y*/
 	int cells_to_fill, cells_to_leave;
 	int **local_board, **old_board;
 	srand(time(NULL));
 
-	cells_to_fill = get_int_from_str(gptr, flags, strings, currentMove, ARG1);
-	cells_to_leave = get_int_from_str(gptr, flags, strings, currentMove, ARG2);
+	cells_to_fill = get_int_from_str(flags, strings, ARG1);
+	cells_to_leave = get_int_from_str(flags, strings, ARG2);
 
 	/* if invalid arguments in regard to type
 	 * and range, flag and return*/
@@ -599,25 +593,25 @@ void generate(ARGS_DEF_FUNC) {
 /*------------Undo-----------------*/
 
 /* Goes back one step in list, if exists */
-void undo(ARGS_DEF_FUNC) {
+void undo(game *gptr, node **currentMove) {
 	/* call undo_aux with printing */
-	undo_aux(gptr, currentMove, flags, 1);
+	undo_aux(gptr, currentMove, 1);
 
 }
 
 /*------------Redo-----------------*/
 
 /* Goes forward one step in list, if exists */
-void redo(ARGS_DEF_FUNC) {
+void redo(game *gptr, node **currentMove) {
 	/* call redo_aux */
-	redo_aux(gptr, currentMove, flags);
+	redo_aux(gptr, currentMove);
 
 }
 
 /*-------------Save---------------*/
 
 /* Using fileIO, saves current board if possible */
-void save(ARGS_DEF_FUNC) {
+void save(game *gptr, int *flags, char **strings, GRBenv *env) {
 
 	/* if in edit mode */
 	if (flags[MODE] == MODE_EDIT) {
@@ -650,12 +644,12 @@ void save(ARGS_DEF_FUNC) {
 /*------------Hint-----------------*/
 
 /* Solve board, print value of cell  */
-void hint(ARGS_DEF_FUNC) {
+void hint(game *gptr, int *flags, char **strings, GRBenv *env) {
 	int **local_board;
 	int row, col, success;
 
-	col = get_int_from_str(gptr, flags, strings, currentMove, ARG1);
-	row = get_int_from_str(gptr, flags, strings, currentMove, ARG2);
+	col = get_int_from_str(flags, strings, ARG1);
+	row = get_int_from_str(flags, strings, ARG2);
 
 	if ((row <= 0) || (row > gptr->sideLength)) {
 		printf("Error, row range is 1<= row <= %d\n", gptr->sideLength);
@@ -679,30 +673,43 @@ void hint(ARGS_DEF_FUNC) {
 	printf("Hint to row:%d, col:%d: %d\n", row, col, local_board[row][col]);
 
 	free_2d_array(local_board, gptr->sideLength);
-
 }
 
 /*------------Guess hint-----------------*/
 
 /*TODO -  */
-void guess_hint(ARGS_DEF_FUNC) {
+void guess_hint(game *gptr, int *flags, char **strings, GRBenv *env) {
+	int row, col;
 
-	/* TODO implement*/
+	col = get_int_from_str(flags, strings, ARG1);
+	row = get_int_from_str(flags, strings, ARG2);
 
+	if ((row <= 0) || (row > gptr->sideLength)) {
+		printf("Error, row range is 1<= row <= %d\n", gptr->sideLength);
+		flags[INVALID_USER_COMMAND] = 1;
+		return;
+	}
+	if ((col <= 0) || (col > gptr->sideLength)) {
+		printf("Error, column range is 1<= row <= %d\n", gptr->sideLength);
+		flags[INVALID_USER_COMMAND] = 1;
+		return;
+	}
+
+	guess_hint_aux(gptr, row, col, env);
 }
 
 /*------------Num Solutions-----------------*/
 
 /* Using stackTracking module, print number of
  * possible solutions */
-void num_solutions(ARGS_DEF_FUNC) {
+void num_solutions(game *gptr) {
 	printf("Number of possible solutions: %d\n", stack_tracking(gptr));
 }
 
 /*------------Autofill-----------------*/
 
 /* Using autocomplete module, fill all obvious cells  */
-void autofill(ARGS_DEF_FUNC) {
+void autofill(game *gptr, int *flags, node **currentMove) {
 	int **old_board;
 
 	/* update board errors*/
@@ -720,7 +727,7 @@ void autofill(ARGS_DEF_FUNC) {
 	}
 
 	/* run autocomplete on board*/
-	iterative_auto_complete(gptr);
+	auto_complete(gptr);
 
 	/* if game over, free old_board and return */
 	if (is_game_over(gptr, flags)) {
@@ -731,7 +738,6 @@ void autofill(ARGS_DEF_FUNC) {
 	/* commit move to list with old board */
 	commit_move(currentMove, gptr, old_board, flags, 0);
 	free_2d_array(old_board, gptr->sideLength);
-
 }
 
 /*------------Reset-----------------*/
@@ -739,28 +745,28 @@ void autofill(ARGS_DEF_FUNC) {
 /* While there are previous moves to be undone, call undoRedo
  * directly from undoRedo module, because undo from userOp
  * also prints the board after undo */
-void reset(ARGS_DEF_FUNC) {
+void reset(game *gptr, int *flags, node **currentMove) {
 	while ((*currentMove)->prev != NULL) {
-		undo_aux(gptr, currentMove, flags, 0);
+		undo_aux(gptr, currentMove, 0);
 	}
 
 	/* print board after done*/
-	print_board_aux(gptr, flags);
-
+	print_board(gptr, flags);
 }
 
-void Exit(ARGS_DEF_FUNC) {
+void Exit(game *gptr, node **currentMove, GRBenv *env) {
 	printf("Exiting game...\n");
 	terminate_all(*currentMove);
 	free_game_pointer(gptr);
-
+	GRBfreeenv(env);
 }
 
 /*------------Function pointer array-----------------*/
-/*initialize function pointer array with NULL values*/
+/*initialize function pointer array with NULL values
 f ops[NUM_OPS] = { &solve, &edit, &mark_errors, &print_board, &set, &validate,
 		&guess, &generate, &undo, &redo, &save, &hint, &guess_hint,
 		&num_solutions, &autofill, &reset, &Exit };
+*/
 
 /* public function using the function array  */
 void user_op(ARGS_DEF_FUNC) {
@@ -770,8 +776,65 @@ void user_op(ARGS_DEF_FUNC) {
 	}
 
 	/* USER_COMMAND macro shifted +1,
-	 * call command -1 from ops function array */
+	 * call command -1 from ops function array
 	ops[flags[USER_COMMAND] - 1](ARGS_PASS_FUNC);
+
+	Since elegant solutions are not allowed here,
+	*/
+
+	switch(flags[USER_COMMAND] - 1) {
+	case 1:
+		solve(gptr, flags, strings, currentMove);
+		break;
+	case 2:
+		edit(gptr, flags, strings, currentMove);
+		break;
+	case 3:
+		mark_errors(gptr, flags, strings, currentMove);
+		break;
+	case 4:
+		print_board(gptr, flags);
+		break;
+	case 5:
+		set(gptr, flags, strings, currentMove);
+		break;
+	case 6:
+		validate(gptr, flags, env);
+		break;
+	case 7:
+		guess(gptr, flags, strings, currentMove, env);
+		break;
+	case 8:
+		generate(gptr, flags, strings, currentMove, env);
+		break;
+	case 9:
+		undo(gptr, currentMove);
+		break;
+	case 10:
+		redo(gptr, currentMove);
+		break;
+	case 11:
+		save(gptr, flags, strings, env);
+		break;
+	case 12:
+		hint(gptr, flags, strings, env);
+		break;
+	case 13:
+		guess_hint(gptr, flags, strings, env);
+		break;
+	case 14:
+		num_solutions(gptr);
+		break;
+	case 15:
+		autofill(gptr, flags, currentMove);
+		break;
+	case 16:
+		reset(gptr, flags, currentMove);
+		break;
+	case 17:
+		Exit(gptr, currentMove, env);
+		break;
+	}
 
 }
 
