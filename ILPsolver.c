@@ -147,9 +147,6 @@ int** gen_board(game *gptr, int cells_to_fill,GRBenv *env) {
 	int cell_fill_success, sol_success = 0, empty_num, attempts_counter = 0,
 			rand_ind, itr, valid_vals_cell_num, i, j;
 
-	/* init random */
-	srand(time(NULL));
-
 	/* init local */
 	local = init_2d_array(gptr->sideLength);
 
@@ -238,19 +235,13 @@ int** gen_board(game *gptr, int cells_to_fill,GRBenv *env) {
 
 /* For Validate: returns 1 if board is solvable, 0 else */
 int board_has_sol(game *gptr, GRBenv *env) {
-	/* create local copy of user*/
 	int **local;
 	int success;
 	local = init_2d_array(gptr->sideLength);
 	copy_2d_array(local, gptr->user, gptr->sideLength);
 
-	/* try to get solution using gurobi */
 	success = gurobi_ilp(local, gptr,env);
-
-	/* free local */
 	free_2d_array(local, gptr->sideLength);
-
-	/* return boolean result */
 	return success;
 }
 

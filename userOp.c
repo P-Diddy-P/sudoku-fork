@@ -408,24 +408,22 @@ void set(game *gptr,int *flags,char **strings, node **currentMove) {
 /*------------Validate-----------------*/
 
 /* Check if board is solvable */
-void validate(game *gptr, int *flags, GRBenv *env) {
+void validate(game *gptr, GRBenv *env) {
 	/* update board errors */
 	update_board_errors(gptr);
 
 	/* if board is erroneous, return error */
 	if (board_has_errors(gptr)) {
 		printf("Error, board is erroneous and thus not solvable\n");
-		flags[INVALID_USER_COMMAND] = 1;/*TODO remove?*/
 		return;
 	}
 
 	/* check if board has solution using ILP from ILPsolver module */
 	if (board_has_sol(gptr,env)) {
 		printf("Board is solvable\n");
-		return;
+	} else {
+		printf("Board is unsolvable\n");
 	}
-	printf("Board is unsolvable\n");
-
 }
 
 /*------------Guess-----------------*/
@@ -548,7 +546,6 @@ void generate(game *gptr, int *flags, char **strings, node **currentMove, GRBenv
 	/* get ints X Y*/
 	int cells_to_fill, cells_to_leave;
 	int **local_board, **old_board;
-	srand(time(NULL));
 
 	cells_to_fill = get_int_from_str(flags, strings, ARG1);
 	cells_to_leave = get_int_from_str(flags, strings, ARG2);
@@ -766,23 +763,20 @@ void Exit(game *gptr, node **currentMove, GRBenv *env) {
 f ops[NUM_OPS] = { &solve, &edit, &mark_errors, &print_board, &set, &validate,
 		&guess, &generate, &undo, &redo, &save, &hint, &guess_hint,
 		&num_solutions, &autofill, &reset, &Exit };
+
+Old solution to userOps. instead of a switch, all operations were loaded in an array,
+and an appropriate function pointer would be chosen in accordance to the parsed command.
+Deprecated due to strict compiling, which demands all parameters sent to a function to be
+used, making a generic function as an operation no better than a switch.
 */
 
 /* public function using the function array  */
-void user_op(ARGS_DEF_FUNC) {
-
+void user_op(game *gptr, int *flags, char **strings, node **currentMove, GRBenv *env) {
 	if (flags[BLANK_ROW] || flags[INVALID_USER_COMMAND]) {
 		return;
 	}
 
-	/* USER_COMMAND macro shifted +1,
-	 * call command -1 from ops function array
-	ops[flags[USER_COMMAND] - 1](ARGS_PASS_FUNC);
-
-	Since elegant solutions are not allowed here,
-	*/
-
-	switch(flags[USER_COMMAND] - 1) {
+	switch(flags[USER_COMMAND]) {
 	case 1:
 		solve(gptr, flags, strings, currentMove);
 		break;
@@ -799,7 +793,7 @@ void user_op(ARGS_DEF_FUNC) {
 		set(gptr, flags, strings, currentMove);
 		break;
 	case 6:
-		validate(gptr, flags, env);
+		validate(gptr, env);
 		break;
 	case 7:
 		guess(gptr, flags, strings, currentMove, env);

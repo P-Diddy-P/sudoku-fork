@@ -19,19 +19,19 @@
  * strings array and currentMove pointer */
 # define NUM_OPS 17
 
+/* Deprecaded definitions for userOp array implementation
 
 # define ARGS_PASS_FUNC gptr, flags, strings, currentMove, env
 # define ARGS_DEF_FUNC game *gptr, int *flags, char **strings, node **currentMove, GRBenv *env
-
-/* Every operation receives as arguments gptr, flags, strings and pointer to current node*/
 typedef void (*f)(game*, int*, char**, node**,GRBenv*);
+*/
 
-/*one public function user_op, recieves the game and user command
+
+/*one public function user_op, receives the game and user command
  * and operates upon the game*/
 
 void user_op(game *gptr, int *flags, char **strings, node **currentMove,GRBenv *env);
 
 void print_art();
-
 
 #endif /* USEROP_H_ */

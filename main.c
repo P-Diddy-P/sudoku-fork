@@ -17,7 +17,8 @@ int main() {
 	node *currentMove;
 	GRBenv *env=NULL;
 
-	srand(time(NULL));
+	SP_BUFF_SET();
+	srand(10);
 
 	gptr = calloc(1, sizeof(game));
 	memory_alloc_error();
@@ -28,35 +29,30 @@ int main() {
 	if (error) {
 		printf("ERROR %d GRBloadenv: %s\n", error, GRBgeterrormsg(env));
 		return -1;
+	} else {
+		errno = 0;
 	}
 
 	error = GRBsetintparam(env, GRB_INT_PAR_LOGTOCONSOLE, 0);
 	if (error) {
 		printf("ERROR %d GRBsetintattr(): %s\n", error, GRBgeterrormsg(env));
 		return -1;
+	} else {
+		errno = 0;
 	}
 
-	SP_BUFF_SET()
-	;
-
 	flags[MODE] = MODE_INIT;
-
 	print_art();
+
 	while (1) {
-
 		parse_user(flags, strings);
-
 		user_op(gptr, flags, strings, &currentMove,env);
 
 		if (flags[EOF_EXIT]) {
 			break;
 		}
-
 	}
-
-
 	return 0;
-
 }
 
 /*

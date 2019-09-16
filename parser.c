@@ -20,11 +20,10 @@
  * if EOF, return singleton containing END_OF_FILE */
 char* parse_get_line(int* flags, char* line) {
 	int k;
-	int val_len = 0;
+	int valid_line_length = 0;
 	char c;
 
 	if (feof(stdin)) {
-		/* if line starts with EOF, return EOF*/
 		flags[EOF_EXIT] = 1;
 		return 0;
 	}
@@ -39,33 +38,26 @@ char* parse_get_line(int* flags, char* line) {
 	}
 
 	for (k = 0; k < BUFF_SIZE; k++) {
-		if (line[k] == 10) {/*if newline encountered before the 258th char (including 257)*/
-			val_len = 1; /*valid line*/
+		if (line[k] == 10) {
+			valid_line_length = 1;
 			break;
 		}
-
 	}
 
-	if (val_len) {/*return pointer to line if valid */
-
+	if (valid_line_length) {
 		return line;
-	}
-
-	else {/*invalid line length*/
+	} else {
 		while ((c = fgetc(stdin)) != 10) {
 			/*advance stdin pointer until newline*/
 		}
 
 		if (feof(stdin)) {
-			/*or  EOF encountered*/
 			flags[EOF_EXIT] = 1;
 		}
-		/*if EOF wasn't encountered in end of line, return invalid length*/
+		/* TODO currently sets INVALID_LINE_LENGTH even if EOF encountered. is this OK? */
 		flags[INVALID_LINE_LENGTH] = 1;
-
 		return 0;
 	}
-
 }
 
 /* print the appropriate syntax*/
@@ -102,7 +94,7 @@ void parse_print_command_correct_args(int* flags) {
 void parse_print_command_modes_error(int num_args, ...) {
 	int k;
 	va_list list;
-	char **to_print = calloc(num_args, sizeof(char*));
+	char **to_print = to_print = calloc(num_args, sizeof(char*));
 	memory_alloc_error();
 
 	/* init variable length argument list */
@@ -134,8 +126,13 @@ void parse_print_command_modes_error(int num_args, ...) {
 
 /* return true if token consists only of whitespace characters */
 int is_token_ws(char *str) {
-	int k, length = (int) strlen(str);
+	int k, length;
 
+	if (str == NULL) {
+		return 1; /* TODO should a null string be considered only whitespace? */
+	}
+
+	length = (int) strlen(str);
 	for (k = 0; k < length; k++) {
 		if (!isspace(str[k])) {
 			return 0;
@@ -149,37 +146,25 @@ int is_token_ws(char *str) {
  * the optional argument is used to differentiate between
  * SOLVE_STR and "save" which have a mandatory path
  * and EDIT_STR where the path is optional*/
-void parse_command_path(int* flags, char* token, char *strings[],
-		int is_optional) {
+void parse_command_path(int* flags, char* token, char *strings[], int is_optional) {
 	char *path;
 	int k = 0;
 
-	token = strtok(NULL, "\r\n");/*path could be token that ends in newline, not in tabs or ws*/
-	if (((is_optional) && (token == NULL)) || is_token_ws(token)) {/*if edit an and no path given, return*/
-		strings[PATH] = NULL;
-		strings[USER_COMMAND_NAME] = EDIT_STR;
-		flags[USER_COMMAND] = EDIT;
-		return;
-	}
+	token = strtok(NULL, "\r\n"); /* path could be token that ends in newline, not in tabs or ws */
 
-	else if ((!is_optional) && (token == NULL)) {
-		printf("Not enough arguments for command %s\n",
-				strings[USER_COMMAND_NAME]);
-		parse_print_command_correct_args(flags);
-		flags[INVALID_USER_COMMAND] = 1;
-		return;
+	if ((token == NULL) || is_token_ws(token)) {
+		if (is_optional) {
+			strings[PATH] = NULL;
+			return;
+		} else {
+			printf("Not enough arguments for command %s\n", strings[USER_COMMAND_NAME]);
+			parse_print_command_correct_args(flags);
+			flags[INVALID_USER_COMMAND] = 1;
+			return;
+		}
 	}
-
-	if (is_optional) {
-		flags[USER_COMMAND] = EDIT;
-		strings[USER_COMMAND_NAME] = EDIT_STR;
-	}
-
-	/*allows for windows based paths
-	 * TODO - can remove when working on UNIX system only */
 
 	path = calloc(258, sizeof(char));
-
 	memory_alloc_error();
 
 	for (k = 0; k < 600; k++) {
@@ -199,7 +184,6 @@ void parse_command_path(int* flags, char* token, char *strings[],
 	}
 
 	strings[PATH] = path;
-
 }
 
 /* parsing commands with arguments and storing the resulting tokens in the
@@ -276,13 +260,13 @@ void parse_line(char *line, int *flags, char* strings[]) {
 	}
 
 	else if ((strcmp(token, EDIT_STR)) == 0) {
-
+		flags[USER_COMMAND] = EDIT;
+		strings[USER_COMMAND_NAME] = EDIT_STR;
 		parse_command_path(flags, token, strings, 1);
-
 	}
 
 	else if ((strcmp(token, MARK_ERRORS_STR)) == 0) {
-		if (flags[MODE] != MODE_SOLVE) { /*if not in correct mode, print error*/
+		if (flags[MODE] != MODE_SOLVE) {
 			parse_print_command_modes_error(2, MARK_ERRORS_STR, SOLVE_STR);
 			flags[INVALID_USER_COMMAND] = 1;
 		} else {
@@ -294,8 +278,7 @@ void parse_line(char *line, int *flags, char* strings[]) {
 
 	else if ((strcmp(token, PRINT_BOARD_STR)) == 0) {
 		if (flags[MODE] == MODE_INIT) {
-			parse_print_command_modes_error(3, PRINT_BOARD_STR, SOLVE_STR,
-			EDIT_STR);
+			parse_print_command_modes_error(3, PRINT_BOARD_STR, SOLVE_STR, EDIT_STR);
 			flags[INVALID_USER_COMMAND] = 1;
 		} else {
 			flags[USER_COMMAND] = PRINT_BOARD;
@@ -452,7 +435,7 @@ void parse_line(char *line, int *flags, char* strings[]) {
 		printf("Invalid command\n");
 		flags[INVALID_USER_COMMAND] = 1;
 		/*TODO - invalid user command, try again
-		 * general for blank row and all syntactically invalid commands?*/
+		 * general for blank row and all syntactically invalid commands? */
 	}
 
 }
@@ -464,32 +447,27 @@ void parse_user(int *flags, char *strings[]) {
 	char *line;
 	int k = 0;
 
-	if (flags[EOF_EXIT]) {/*if previous line end in EOF*/
+	if (flags[EOF_EXIT]) {
 		return;
 	}
 
 	printf("Please enter a command:\n");
 
-	/*nullify user command range before iteration*/
 	for (k = NULLIFY_START; k <= NULLIFY_END; k++) {
 		flags[k] = 0;
 	}
 
 	/*TODO - need to null strings */
 
-	line = parse_get_line(flags, input);/*read line chars from stdin*/
+	line = parse_get_line(flags, input);
 	/* TODO - check to change parse_get_line to void and remove input*/
 
 	if (flags[INVALID_LINE_LENGTH]) {
-		printf(
-				"Command length invalid, at most 256 characters per line are allowed\n");
+		printf("Command length invalid, at most 256 characters per line are allowed.\n");
 		flags[INVALID_USER_COMMAND]=1;
-		/* return and prompt user for another line (part of game flow)*/
 		return;
 	}
 
-	/*if valid line, parse line and fill flags*/
 	parse_line(line, flags, strings);
-
 }
 
