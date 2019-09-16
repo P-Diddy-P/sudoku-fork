@@ -129,7 +129,7 @@ int is_token_ws(char *str) {
 	int k, length;
 
 	if (str == NULL) {
-		return 1; /* TODO should a null string be considered only whitespace? */
+		return 1;
 	}
 
 	length = (int) strlen(str);
@@ -445,6 +445,7 @@ void parse_user(int *flags, char *strings[]) {
 	int k = 0;
 
 	if (flags[EOF_EXIT]) {
+		flags[USER_COMMAND] = EXIT;
 		return;
 	}
 
@@ -454,10 +455,7 @@ void parse_user(int *flags, char *strings[]) {
 		flags[k] = 0;
 	}
 
-	/*TODO - need to null strings */
-
 	line = parse_get_line(flags, input);
-	/* TODO - check to change parse_get_line to void and remove input*/
 
 	if (flags[INVALID_LINE_LENGTH]) {
 		printf("Command length invalid, at most 256 characters per line are allowed.\n");

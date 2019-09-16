@@ -462,7 +462,6 @@ void guess(game *gptr, int *flags, char **strings, node **currentMove, GRBenv *e
 		return;
 	}
 
-	/* copy values to old_board */
 	old_board = init_2d_array(gptr->sideLength);
 	copy_2d_array(old_board, gptr->user, gptr->sideLength);
 
@@ -473,7 +472,6 @@ void guess(game *gptr, int *flags, char **strings, node **currentMove, GRBenv *e
 
 	guess_aux(gptr, thres, env);
 
-	/* commit move to list with old board */
 	commit_move(currentMove, gptr, old_board, flags, 0);
 	free_2d_array(old_board, gptr->sideLength);
 }
@@ -509,46 +507,28 @@ int generate_are_ints_valid(game *gptr, int x, int y) {
 void clear_all_but_y(game *gptr, int cells_to_leave) {
 	int **cells;
 	int i, j, index=0, num_cells;
-	/* create array of cells */
-
 
 	cells = calloc(gptr->sideLength * gptr->sideLength, sizeof(int*));
-
 	memory_alloc_error();
 
-
 	num_cells = gptr->sideLength * gptr->sideLength;
-
-
-
 	for (i = 0; i < gptr->sideLength; i++) {
 		for (j = 0; j < gptr->sideLength; j++) {
-
-
 			cells[index] = calloc(2, sizeof(int));
-
 			memory_alloc_error();
 
 			cells[index][0] = i;
 			cells[index][1] = j;
 			index++;
-
 		}
 	}
 
-
-
-	/* randomize array */
 	randomize_cell_array(cells, num_cells);
-
-
-	/* pick the first sideLength^2-cells_to_leave cells, and nullify them */
 	for (index = 0; index < num_cells - cells_to_leave; index++) {
 		gptr->user[cells[index][0]][cells[index][1]] = 0;
 	}
 
-	free_2d_array(cells,num_cells);/* added */
-
+	free_2d_array(cells,num_cells);
 }
 
 void generate(game *gptr, int *flags, char **strings, node **currentMove, GRBenv *env) {
@@ -569,49 +549,37 @@ void generate(game *gptr, int *flags, char **strings, node **currentMove, GRBenv
 
 	old_board = init_2d_array(gptr->sideLength);
 	copy_2d_array(old_board, gptr->user, gptr->sideLength);
-
 	local_board = gen_board(gptr,cells_to_fill,env);
 
-	printf("returned from genBoard\n");
-
-	/* if NULL returned, operation failed, return */
 	if (local_board == NULL) {
 		flags[INVALID_USER_COMMAND] = 1;
 		free_2d_array(old_board, gptr->sideLength);
 		return;
 	}
 
-	/* else, copy values, free local and return */
 	copy_2d_array(gptr->user, local_board, gptr->sideLength);
 	free_2d_array(local_board, gptr->sideLength);
-
-
-
-	/* delete all but y random cells */
 	clear_all_but_y(gptr, cells_to_leave);
 
-	printf("before commit\n");
-	/* create new node in undeRedo list */
 	commit_move(currentMove, gptr, old_board, flags, 0);
-	printf("after commit\n");
+	print_board(gptr, flags);
 }
 
 /*------------Undo-----------------*/
 
 /* Goes back one step in list, if exists */
-void undo(game *gptr, node **currentMove) {
-	/* call undo_aux with printing */
-	undo_aux(gptr, currentMove, 1);
-
+void undo(game *gptr, node **currentMove, int *flags) {
+	undo_aux(gptr, currentMove, flags, 1);
+	print_board(gptr, flags);
 }
 
 /*------------Redo-----------------*/
 
 /* Goes forward one step in list, if exists */
-void redo(game *gptr, node **currentMove) {
+void redo(game *gptr, node **currentMove, int *flags) {
 	/* call redo_aux */
-	redo_aux(gptr, currentMove);
-
+	redo_aux(gptr, currentMove, flags);
+	print_board(gptr, flags);
 }
 
 /*-------------Save---------------*/
@@ -753,18 +721,23 @@ void autofill(game *gptr, int *flags, node **currentMove) {
  * also prints the board after undo */
 void reset(game *gptr, int *flags, node **currentMove) {
 	while ((*currentMove)->prev != NULL) {
-		undo_aux(gptr, currentMove, 0);
+		undo_aux(gptr, currentMove, flags, 0);
 	}
 
 	/* print board after done*/
 	print_board(gptr, flags);
 }
 
-void Exit(game *gptr, node **currentMove, GRBenv *env) {
+void Exit(game *gptr, node **currentMove, char **strings, GRBenv *env) {
+	int k;
+
 	printf("Exiting game...\n");
 	terminate_all(*currentMove);
 	free_game_pointer(gptr);
 	GRBfreeenv(env);
+	for (k = STR_FREE_START; k <= STR_FREE_END; k++) {
+		free(strings[k]);
+	}
 }
 
 /*------------Function pointer array-----------------*/
@@ -811,10 +784,10 @@ void user_op(game *gptr, int *flags, char **strings, node **currentMove, GRBenv 
 		generate(gptr, flags, strings, currentMove, env);
 		break;
 	case 9:
-		undo(gptr, currentMove);
+		undo(gptr, currentMove, flags);
 		break;
 	case 10:
-		redo(gptr, currentMove);
+		redo(gptr, currentMove, flags);
 		break;
 	case 11:
 		save(gptr, flags, strings, env);
@@ -835,7 +808,7 @@ void user_op(game *gptr, int *flags, char **strings, node **currentMove, GRBenv 
 		reset(gptr, flags, currentMove);
 		break;
 	case 17:
-		Exit(gptr, currentMove, env);
+		Exit(gptr, currentMove, strings, env);
 		break;
 	}
 

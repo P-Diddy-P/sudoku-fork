@@ -148,8 +148,6 @@ int** gen_board(game *gptr, int cells_to_fill,GRBenv *env) {
 	valid_vals_cell = calloc(gptr->sideLength, sizeof(int));
 	memory_alloc_error();
 
-	printf("done allocating\n");
-
 	while (attempts_counter++ < 1000) {
 		randomize_cell_array(empty_cells, empty_num);
 		cell_fill_success = 1;
@@ -158,10 +156,8 @@ int** gen_board(game *gptr, int cells_to_fill,GRBenv *env) {
 			i = empty_cells[itr][0];
 			j = empty_cells[itr][1];
 
-			printf("iter %d pre enum\n", itr);
 			enumerate_valid_values_for_cell(valid_vals_cell, i, j, gptr,
 					&valid_vals_cell_num);
-			printf("iter %d post enum\n", itr);
 
 			if (valid_vals_cell_num == 0) {
 				cell_fill_success = 0;

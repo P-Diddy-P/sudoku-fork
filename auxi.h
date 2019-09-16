@@ -19,8 +19,8 @@
 
 /*constants definitions*/
 
-# define NUM_FLAGS 50
-# define NUM_STRINGS 50
+# define NUM_FLAGS 10
+# define NUM_STRINGS 5
 
 # define INVALID_LENGTH 0
 # define END_OF_FILE 1
@@ -91,6 +91,8 @@
 
 # define NULLIFY_START 3
 # define NULLIFY_END 8
+# define STR_FREE_START	1
+# define STR_FREE_END	4
 
 
 

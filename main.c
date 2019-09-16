@@ -15,7 +15,7 @@ int main() {
 
 	game *gptr;
 	node *currentMove;
-	GRBenv *env=NULL;
+	GRBenv *env = NULL;
 
 	SP_BUFF_SET();
 	srand(10);
