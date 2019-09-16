@@ -192,19 +192,18 @@ void parse_command_args(int* flags, char *strings[], char* token, int num_args) 
 	int k;
 	char *str;
 
-	/*no need to check for EOF (get_line resp*/
+	/*no need to check for EOF (get_line responsibility) */
 	for (k = 1; k <= num_args; k++) {
 
 		token = strtok(NULL, DELIM);
 
-		/* first check if token is NULL*/
-		if (token == NULL) {/*not enough arguments*/
+		if (token == NULL) {
 			printf("Not enough arguments for command %s\n",
 					strings[USER_COMMAND_NAME]);
+
 			parse_print_command_correct_args(flags);
 			flags[INVALID_USER_COMMAND] = 1;
 			return;
-
 		}
 
 		/* If token not NULL, dynamically allocate space for string in strings array
@@ -222,10 +221,10 @@ void parse_command_args(int* flags, char *strings[], char* token, int num_args) 
 	if (token != NULL) { /*too many arguments*/
 		printf("Too many arguments for command %s \n",
 				strings[USER_COMMAND_NAME]);
+
 		parse_print_command_correct_args(flags);
 		flags[INVALID_USER_COMMAND] = 1;
 	}
-
 }
 
 /*parsing commands with no arguments
@@ -237,9 +236,9 @@ void parse_command_no_args(int* flags, char *strings[], char* token) {
 	if (token != NULL) {
 		printf("Command %s receives no arguments\n",
 				strings[USER_COMMAND_NAME]);
+
 		flags[INVALID_USER_COMMAND] = 1;
 	}
-
 }
 
 /*parsing lines according to command type - first token*/
@@ -296,13 +295,11 @@ void parse_line(char *line, int *flags, char* strings[]) {
 			strings[USER_COMMAND_NAME] = SET_STR;
 			parse_command_args(flags, strings, token, 3);
 		}
-
 	}
 
 	else if ((strcmp(token, VALIDATE_STR)) == 0) {
 		if (flags[MODE] == MODE_INIT) {
-			parse_print_command_modes_error(3, VALIDATE_STR, SOLVE_STR,
-			EDIT_STR);
+			parse_print_command_modes_error(3, VALIDATE_STR, SOLVE_STR, EDIT_STR);
 			flags[INVALID_USER_COMMAND] = 1;
 		} else {
 			flags[USER_COMMAND] = VALIDATE;
@@ -323,7 +320,7 @@ void parse_line(char *line, int *flags, char* strings[]) {
 	}
 
 	else if ((strcmp(token, GENERATE_STR)) == 0) {
-		if (flags[MODE] != MODE_SOLVE) {
+		if (flags[MODE] != MODE_EDIT) {
 			parse_print_command_modes_error(2, GENERATE_STR, EDIT_STR);
 			flags[INVALID_USER_COMMAND] = 1;
 		} else {

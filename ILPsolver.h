@@ -20,7 +20,7 @@ int board_has_sol(game *gptr,GRBenv *env);
 
 int gurobi_ilp(int **local,game *gptr,GRBenv *env);
 
-void randomize_pointer_array(int** array, int length);
+void randomize_cell_array(int** array, int length);
 
 
 #endif /* ILPSOLVER_H_ */

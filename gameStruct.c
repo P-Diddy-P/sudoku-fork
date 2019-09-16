@@ -420,14 +420,14 @@ int** init_2d_array(int sideLength) {
 }
 
 /* free a 2D array of ints */
-void free_2d_array(int **mat, int sideLength) {
+void free_2d_array(int **mat, int length) {
 	int i;
 
 	if (mat == NULL) {
 		return;
 	}
 
-	for (i = 0; i < sideLength; i++) {
+	for (i = 0; i < length; i++) {
 		free(mat[i]);
 	}
 	free(mat);

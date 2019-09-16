@@ -491,7 +491,7 @@ int generate_are_ints_valid(game *gptr, int x, int y) {
 	empty = count_empty(gptr->user, gptr->sideLength);
 	if ((x < 0) || (x > empty)) {
 		printf("Error, argument X for command generate should"
-				" be in range 0<= X <= %d", empty);
+				" be in range 0<= X <= %d\n", empty);
 		return 0;
 	}
 	/* TODO what happens if X==empty? all empty cells are filled
@@ -500,12 +500,10 @@ int generate_are_ints_valid(game *gptr, int x, int y) {
 	sq = gptr->sideLength * gptr->sideLength;
 	if ((y < 0) || (y > sq)) {
 		printf("Error, argument Y for command generate should"
-				" be in range 0<= Y <= %d", sq);
+				" be in range 0<= Y <= %d\n", sq);
 		return 0;
 	}
-
 	return 1;
-
 }
 
 void clear_all_but_y(game *gptr, int cells_to_leave) {
@@ -532,7 +530,7 @@ void clear_all_but_y(game *gptr, int cells_to_leave) {
 	}
 
 	/* randomize array */
-	randomize_pointer_array(cells, num_cells);
+	randomize_cell_array(cells, num_cells);
 
 	/* pick the first sideLength^2-cells_to_leave cells, and nullify them */
 	for (index = 0; index < num_cells - cells_to_leave; index++) {
@@ -541,17 +539,13 @@ void clear_all_but_y(game *gptr, int cells_to_leave) {
 
 }
 
-/* Generate new board */
 void generate(game *gptr, int *flags, char **strings, node **currentMove, GRBenv *env) {
-	/* get ints X Y*/
 	int cells_to_fill, cells_to_leave;
 	int **local_board, **old_board;
 
 	cells_to_fill = get_int_from_str(flags, strings, ARG1);
 	cells_to_leave = get_int_from_str(flags, strings, ARG2);
 
-	/* if invalid arguments in regard to type
-	 * and range, flag and return*/
 	if (flags[INVALID_USER_COMMAND]) {
 		return;
 	}
@@ -561,11 +555,8 @@ void generate(game *gptr, int *flags, char **strings, node **currentMove, GRBenv
 		return;
 	}
 
-	/* copy values to old_board */
 	old_board = init_2d_array(gptr->sideLength);
 	copy_2d_array(old_board, gptr->user, gptr->sideLength);
-
-	/* call gen_board from ILPsolver to create new board */
 	local_board = gen_board(gptr,cells_to_fill,env);
 
 	/* if NULL returned, operation failed, return */
@@ -582,9 +573,10 @@ void generate(game *gptr, int *flags, char **strings, node **currentMove, GRBenv
 	/* delete all but y random cells */
 	clear_all_but_y(gptr, cells_to_leave);
 
+	printf("cleared values\n");
+
 	/* create new node in undeRedo list */
 	commit_move(currentMove, gptr, old_board, flags, 0);
-
 }
 
 /*------------Undo-----------------*/

@@ -37,8 +37,6 @@ int main() {
 	if (error) {
 		printf("ERROR %d GRBsetintattr(): %s\n", error, GRBgeterrormsg(env));
 		return -1;
-	} else {
-		errno = 0;
 	}
 
 	flags[MODE] = MODE_INIT;

@@ -20,22 +20,26 @@ void enumerate_valid_values_for_cell(int* valid_vals_array, int i, int j,
 	/* if value valid for cell, add to array */
 	for (value = 1; value <= gptr->sideLength; value++) {
 		if (check_valid_value(gptr, i, j, value)) {
-			valid_vals_array[num - 1] = value;
+			valid_vals_array[num] = value;
 			num++;
 		}
 	}
 
 	*num_vals = num;
-
 }
 
 /* swapping pointer values for int arrays, in an
  * array of pointers to int arrays */
-void swap_pointers(int **a, int **b) {
-	int *temp;
-	temp = *b;
-	*b = *a;
-	*a = temp;
+void swap_cell_values(int *a, int *b) {
+	int ti, tj;
+	ti = b[0];
+	tj = b[1];
+
+	b[0] = a[0];
+	b[1] = a[1];
+
+	a[0] = ti;
+	a[1] = tj;
 }
 
 /* swapping 2 ints in an int array */
@@ -49,14 +53,14 @@ void swap_numbers(int *a, int *b) {
 /* Randomizing the array of empty cells for every iteration
  * Implemented using the Fisher-Yates algorithm (objects in hat),
  * which guarantees an uniform distribution of permutations in O(n) */
-void randomize_pointer_array(int** array, int length) {
+void randomize_cell_array(int** array, int length) {
 	int i, j;
 
 	/* pick an element from the end of elements not picked,
 	 * and replace it with element from array */
 	for (i = length - 1; i > 0; i--) {
 		j = rand() % (i + 1);
-		swap_pointers(&(array[i]), &(array[j]));
+		swap_cell_values(array[i], array[j]);
 	}
 }
 
@@ -76,31 +80,24 @@ void randomize_array(int* array, int length) {
 gets pointer to cell map (maybe generate cell map inside function?) and to board
 this function is called from gen_board, which takes care of filling board with X random values
 in gen_board, a local copy of gptr->user is created  */
-int gurobi_ilp(int **board,game *gptr,GRBenv *env) {
+int gurobi_ilp(int **board, game *gptr, GRBenv *env) {
+	int **empty_cells = NULL;
+	double *objective_solution = NULL;
+	int empty_num, has_sol, empty_cell_index, value;
 
-	/* create empty cell array  */
-	int **empty_cells=NULL;
-	double *objective_solution=NULL;
-	int empty_num, has_sol, empty_cell_index,value;
+	empty_num = enumerate_empty_cells(gptr, &empty_cells);
+	has_sol = gurobi_general(gptr, empty_cells, &objective_solution, empty_num,
+								GRB_BINARY, env);
 
-
-	/* enumarate empty cells */
-	empty_num = enumerate_empty_cells(gptr,&empty_cells);
-
-	/* get solution to board */
-	has_sol = gurobi_general(gptr,empty_cells,&objective_solution,empty_num,GRB_BINARY,env);
-
-	/* if no solution exists, return */
-	if (has_sol<0){
+	if (has_sol < 0) {
 		printf("No solution found\n");
-		/* free allocated objective_solution and empty_cells*/
+
 		free(objective_solution);
-		free_2d_array(empty_cells,gptr->sideLength);
+		free_2d_array(empty_cells, gptr->sideLength);
 		return 0;
 	}
 
-	/* TODO safeguard, maybe remove at end */
-	if (has_sol!=empty_num){
+	if (has_sol != empty_num){
 		printf("Objective value incorrect, ...\n");
 		/* free allocated objective_solution and empty_cells*/
 		free(objective_solution);
@@ -125,7 +122,6 @@ int gurobi_ilp(int **board,game *gptr,GRBenv *env) {
 		}
 	}
 
-	/* free allocated objective_solution and empty_cells*/
 	free(objective_solution);
 	free_2d_array(empty_cells,gptr->sideLength);
 
@@ -147,90 +143,53 @@ int** gen_board(game *gptr, int cells_to_fill,GRBenv *env) {
 	int cell_fill_success, sol_success = 0, empty_num, attempts_counter = 0,
 			rand_ind, itr, valid_vals_cell_num, i, j;
 
-	/* init local */
 	local = init_2d_array(gptr->sideLength);
-
-	/* enumerate empty cells */
-	empty_num = count_empty(gptr->user,gptr->sideLength);/*TODO maybe pass */
-	empty_cells = calloc(empty_num, sizeof(int*));
-
-	memory_alloc_error();
-
-	valid_vals_cell = calloc(gptr->sideLength, sizeof(int));
-
-	memory_alloc_error();
-
-	/* get empty cells */
 	empty_num = enumerate_empty_cells(gptr, &empty_cells);
+	valid_vals_cell = calloc(gptr->sideLength, sizeof(int));
+	memory_alloc_error();
 
-	/* while no solution found, keep trying */
+	printf("done allocating\n");
+
 	while (attempts_counter++ < 1000) {
-
-		/* while cells filling didn't succeed, keep trying.
-		 * trying to fill X cells and not succeeding, also counts as an attempt */
-
-		/* re-randomize the array */
-		randomize_pointer_array(empty_cells, empty_num);
-
-		/* reset local as gptr->user */
-		copy_2d_array(local, gptr->user, gptr->sideLength);
-
+		randomize_cell_array(empty_cells, empty_num);
 		cell_fill_success = 1;
-		/* for each empty cell */
+
 		for (itr = 0; itr < cells_to_fill; itr++) {
-			/* get valid values for cell array and  */
 			i = empty_cells[itr][0];
 			j = empty_cells[itr][1];
 
+			printf("iter %d pre enum\n", itr);
 			enumerate_valid_values_for_cell(valid_vals_cell, i, j, gptr,
 					&valid_vals_cell_num);
+			printf("iter %d post enum\n", itr);
 
-			/* if none exists, attempt finished.
-			 * re-randomize and try again */
 			if (valid_vals_cell_num == 0) {
 				cell_fill_success = 0;
-				free(valid_vals_cell);/* TODO null pointer need to be freed?*/
 				break;
-			}
-
-			/* choose random index from valid cells array and
-			 * fill cell with that value */
-			else {
+			} else {
 				rand_ind = rand() % valid_vals_cell_num;
 				local[i][j] = valid_vals_cell[rand_ind];
 			}
-
 		}
 
 		if (!cell_fill_success) {
 			continue;
 		}
 
-		/* if valid fill of X empty cells found, try to solve */
-		sol_success = gurobi_ilp(local, gptr,env);
-
-		/* if solution found */
+		sol_success = gurobi_ilp(local, gptr, env);
 		if (sol_success) {
 			break;
 		}
-
 	}
 
-	/* after solution found or 1000 iterations passed,
-	 *  free empty cells array */
 	free_2d_array(empty_cells, empty_num);
-	/* free cell values enumeration */
 	free(valid_vals_cell);
-
-	/* if 1000 iterations passed and no solution found, return NULL */
 	if (!sol_success) {
 		free_2d_array(local, gptr->sideLength);
 		return NULL;
-
+	} else {
+		return local;
 	}
-
-	/*else, return solved board */
-	return local;
 }
 
 /* For Validate: returns 1 if board is solvable, 0 else */
