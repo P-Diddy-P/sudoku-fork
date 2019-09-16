@@ -508,16 +508,23 @@ int generate_are_ints_valid(game *gptr, int x, int y) {
 
 void clear_all_but_y(game *gptr, int cells_to_leave) {
 	int **cells;
-	int i, j, index, num_cells;
+	int i, j, index=0, num_cells;
 	/* create array of cells */
+
+
 	cells = calloc(gptr->sideLength * gptr->sideLength, sizeof(int*));
 
 	memory_alloc_error();
 
+
 	num_cells = gptr->sideLength * gptr->sideLength;
+
+
 
 	for (i = 0; i < gptr->sideLength; i++) {
 		for (j = 0; j < gptr->sideLength; j++) {
+
+
 			cells[index] = calloc(2, sizeof(int));
 
 			memory_alloc_error();
@@ -529,13 +536,18 @@ void clear_all_but_y(game *gptr, int cells_to_leave) {
 		}
 	}
 
+
+
 	/* randomize array */
 	randomize_cell_array(cells, num_cells);
+
 
 	/* pick the first sideLength^2-cells_to_leave cells, and nullify them */
 	for (index = 0; index < num_cells - cells_to_leave; index++) {
 		gptr->user[cells[index][0]][cells[index][1]] = 0;
 	}
+
+	free_2d_array(cells,num_cells);/* added */
 
 }
 
@@ -557,7 +569,10 @@ void generate(game *gptr, int *flags, char **strings, node **currentMove, GRBenv
 
 	old_board = init_2d_array(gptr->sideLength);
 	copy_2d_array(old_board, gptr->user, gptr->sideLength);
+
 	local_board = gen_board(gptr,cells_to_fill,env);
+
+	printf("returned from genBoard\n");
 
 	/* if NULL returned, operation failed, return */
 	if (local_board == NULL) {
@@ -570,13 +585,15 @@ void generate(game *gptr, int *flags, char **strings, node **currentMove, GRBenv
 	copy_2d_array(gptr->user, local_board, gptr->sideLength);
 	free_2d_array(local_board, gptr->sideLength);
 
+
+
 	/* delete all but y random cells */
 	clear_all_but_y(gptr, cells_to_leave);
 
-	printf("cleared values\n");
-
+	printf("before commit\n");
 	/* create new node in undeRedo list */
 	commit_move(currentMove, gptr, old_board, flags, 0);
+	printf("after commit\n");
 }
 
 /*------------Undo-----------------*/
