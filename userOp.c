@@ -437,11 +437,8 @@ double get_float_from_str(int *flags, char **strings, int arg) {
 		return 0;
 	}
 
-	/* try to convert to float with atof */
-	get_float = atof(strings[arg]);
-
-	/* if non zero, conversions successful, return float */
-	if (!get_float) {
+	get_float = strtod(strings[arg], NULL);
+	if (get_float) {
 		return get_float;
 	}
 
@@ -457,7 +454,7 @@ double get_float_from_str(int *flags, char **strings, int arg) {
 void guess(game *gptr, int *flags, char **strings, node **currentMove,
 		GRBenv *env) {
 	int **old_board;
-	float thres = get_float_from_str(flags, strings, 1);
+	double thres = get_float_from_str(flags, strings, 1);
 
 	if (flags[INVALID_USER_COMMAND]) {
 		return;
@@ -475,6 +472,7 @@ void guess(game *gptr, int *flags, char **strings, node **currentMove,
 
 	commit_move(currentMove, gptr, old_board, flags, 0);
 	free_2d_array(old_board, gptr->sideLength);
+	print_board(gptr, flags);
 }
 
 /*------------Generate-----------------*/

@@ -29,7 +29,7 @@ void reshape_solution(double *old_solution, double **new_solution, int num_rows,
 
 /* reduces the prob of each cell value to 0 if it is not over the threshold or the value is
  * invalid for the cell [row, col]. */
-int condanse_valids(game *gptr, int row, int col, double *original_prob, int **dest_index, double **dest_prob, float threshold) {
+int condanse_valids(game *gptr, int row, int col, double *original_prob, int **dest_index, double **dest_prob, double threshold) {
 
     int i, vi = 0, num_valids = 0;
     double sum_prob = 0.0;
@@ -97,7 +97,7 @@ int pick_random_value(int *value, double *prob, int length) {
     exit(1);
 }
 
-int fill_cell(game *gptr, double *value_prob, int row, int col, float threshold) {
+int fill_cell(game *gptr, double *value_prob, int row, int col, double threshold) {
     int *valid_value;
     double *valid_prob;
     int num_valids = condanse_valids(gptr, row, col, value_prob, &valid_value, &valid_prob, threshold);
@@ -157,7 +157,7 @@ int guess_hint_aux(game *gptr, int row, int col, GRBenv *env) {
     return 0;
 }
 
-int guess_aux(game *gptr, float threshold, GRBenv *env) {
+int guess_aux(game *gptr, double threshold, GRBenv *env) {
     int i, empty_cells, objective_value, filled_cells = 0;
     int **cell_map = NULL;
     double *solution_probs = NULL;
