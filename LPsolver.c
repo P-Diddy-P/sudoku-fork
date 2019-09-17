@@ -164,15 +164,7 @@ int guess_aux(game *gptr, double threshold, GRBenv *env) {
     double **prob_matrix = NULL; /* reshape solution_probs to a sl x empty_cells matrix */
 
     empty_cells = enumerate_empty_cells(gptr, &cell_map);
-    objective_value = gurobi_general(gptr, cell_map, &solution_probs, empty_cells, GRB_CONTINUOUS,env);
-    errno = 0;
-
-    prob_matrix = malloc(empty_cells * sizeof(double *));
-    for (i=0; i<empty_cells; i++) {
-        prob_matrix[i] = calloc(gptr->sideLength, sizeof(double));
-    }
-    reshape_solution(solution_probs, prob_matrix, empty_cells, gptr->sideLength);
-    free(solution_probs);
+    objective_value = gurobi_general(gptr, cell_map, &solution_probs, empty_cells, GRB_CONTINUOUS, env);
 
     if (objective_value < 0) {
         if (objective_value == -1) {
@@ -184,10 +176,16 @@ int guess_aux(game *gptr, double threshold, GRBenv *env) {
         }
 
         free_2d_array(cell_map, empty_cells);
-        free_2d_double_array(prob_matrix, empty_cells);
+        free(solution_probs);
         return -1;
-        /* replace with some error value. Consider different return values for for different error causes */
     }
+
+    prob_matrix = malloc(empty_cells * sizeof(double *));
+    for (i=0; i<empty_cells; i++) {
+        prob_matrix[i] = calloc(gptr->sideLength, sizeof(double));
+    }
+    reshape_solution(solution_probs, prob_matrix, empty_cells, gptr->sideLength);
+    free(solution_probs);
 
     /* PRINT CELL PROBABILITIES
     for (i=0; i<empty_cells; i++) {
