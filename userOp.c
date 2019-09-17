@@ -463,12 +463,13 @@ void guess(game *gptr, int *flags, char **strings, node **currentMove,
 	old_board = init_2d_array(gptr->sideLength);
 	copy_2d_array(old_board, gptr->user, gptr->sideLength);
 
+	guess_aux(gptr, thres, env);
+
 	if (is_game_over(gptr, flags)) {
 		free_2d_array(old_board, gptr->sideLength);
 		return;
 	}
 
-	guess_aux(gptr, thres, env);
 
 	commit_move(currentMove, gptr, old_board, flags, 0);
 	free_2d_array(old_board, gptr->sideLength);
