@@ -23,22 +23,35 @@ char* parse_get_line(int* flags, char* line) {
 	int valid_line_length = 0;
 	char c;
 
+
+	/* if EOF encountered BEFORE reading the line,
+	 * it must be that the line is blank, in the end of file.
+	 * flag EOF_EXIT and return */
 	if (feof(stdin)) {
 		flags[EOF_EXIT] = 1;
+		printf("FIRST EOF\n");
 		return 0;
 	}
 
+	/* get line using fgets - reads until first newline
+	 * cahr encountered  - what about EOF?*/
 	fgets(line, BUFF_SIZE, stdin);
 
 	/* for the case that EOF reached after reading the line
 	 * TODO need to check for EOF before calling parse_user or get_line
-	 * in main flow*/
+	 * in main flow
+	 *
+	 * if EOF reached straight after the line, need to do the op
+	 * and then exit, withput reading another line */
 	if (feof(stdin)) {
 		flags[EOF_EXIT] = 1;
+		printf("SECOND EOF\n");
+
 	}
 
+
 	for (k = 0; k < BUFF_SIZE; k++) {
-		if (line[k] == 10) {
+		if ((line[k] == 10) || (line[k] == 0)) {
 			valid_line_length = 1;
 			break;
 		}
@@ -47,8 +60,11 @@ char* parse_get_line(int* flags, char* line) {
 	if (valid_line_length) {
 		return line;
 	} else {
-		while ((c = fgetc(stdin)) != 10) {
-			/*advance stdin pointer until newline*/
+
+		while (( (c = fgetc(stdin)) != 10 ) || ((c = fgetc(stdin)) != EOF)) {
+			/*advance stdin pointer until newline or EOF */
+
+
 		}
 
 		if (feof(stdin)) {
@@ -246,6 +262,8 @@ void parse_line(char *line, int *flags, char* strings[]) {
 	char* token;
 
 	token = strtok(line, DELIM);
+
+	printf("token == %s\n",token);
 
 	if (token == NULL || is_token_ws(token)) { /* case blank row, only whitespace or tabs*/
 		flags[BLANK_ROW] = 1;
@@ -464,5 +482,8 @@ void parse_user(int *flags, char *strings[]) {
 	}
 
 	parse_line(line, flags, strings);
+
+
+
 }
 

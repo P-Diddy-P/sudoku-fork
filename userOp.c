@@ -18,10 +18,7 @@
  *	 No need to check if mode is valid, being checked in parse module
  */
 
-
-
 # include "userOp.h"
-
 
 /* ----------------------------------------
  * ----------------------------------------
@@ -82,7 +79,7 @@ char* print_arg_name(int arg) {
 }
 
 /* Parse argument to int */
-int get_int_from_str(int *flags,char **strings, int arg) {
+int get_int_from_str(int *flags, char **strings, int arg) {
 	int get_int;
 
 	/* check if string is zero */
@@ -275,7 +272,7 @@ void edit(game *gptr, int *flags, char **strings, node **currentMove) {
 
 /*------------Mark errors----------*/
 /* TODO changing the mark_errors bit */
-void mark_errors(game *gptr,int *flags,char **strings, node **currentMove) {
+void mark_errors(game *gptr, int *flags, char **strings, node **currentMove) {
 	int val;
 
 	/* try to read first argument as int */
@@ -300,8 +297,10 @@ void mark_errors(game *gptr,int *flags,char **strings, node **currentMove) {
 
 	if (val == 1) {
 		flags[MARK_ERRORS_FLAG] = 1;
+		printf("Errors are marked\n");
 	} else if (val == 0) {
 		flags[MARK_ERRORS_FLAG] = 0;
+		printf("Errors are not marked\n");
 	}
 
 	commit_move(currentMove, gptr, NULL, flags, 0);
@@ -323,7 +322,8 @@ int set_val_range(int arg, int argind, int lower, int upper) {
 	return 1;
 }
 
-int set_check(int *col, int *row, int *val, game *gptr, int *flags, char **strings) {
+int set_check(int *col, int *row, int *val, game *gptr, int *flags,
+		char **strings) {
 
 	/* parse and check arguments, return if invalid
 	 * error messages are printed from functions */
@@ -359,7 +359,7 @@ int set_check(int *col, int *row, int *val, game *gptr, int *flags, char **strin
 }
 
 /* Set a value in board, check if solved */
-void set(game *gptr,int *flags,char **strings, node **currentMove) {
+void set(game *gptr, int *flags, char **strings, node **currentMove) {
 
 	/* init ints to get, pass pointers to parsing and range check
 	 * declare copy to be used */
@@ -419,7 +419,7 @@ void validate(game *gptr, GRBenv *env) {
 	}
 
 	/* check if board has solution using ILP from ILPsolver module */
-	if (board_has_sol(gptr,env)) {
+	if (board_has_sol(gptr, env)) {
 		printf("Board is solvable\n");
 	} else {
 		printf("Board is unsolvable\n");
@@ -454,7 +454,8 @@ double get_float_from_str(int *flags, char **strings, int arg) {
 }
 
 /*TODO - */
-void guess(game *gptr, int *flags, char **strings, node **currentMove, GRBenv *env) {
+void guess(game *gptr, int *flags, char **strings, node **currentMove,
+		GRBenv *env) {
 	int **old_board;
 	float thres = get_float_from_str(flags, strings, 1);
 
@@ -506,7 +507,7 @@ int generate_are_ints_valid(game *gptr, int x, int y) {
 
 void clear_all_but_y(game *gptr, int cells_to_leave) {
 	int **cells;
-	int i, j, index=0, num_cells;
+	int i, j, index = 0, num_cells;
 
 	cells = calloc(gptr->sideLength * gptr->sideLength, sizeof(int*));
 	memory_alloc_error();
@@ -528,10 +529,11 @@ void clear_all_but_y(game *gptr, int cells_to_leave) {
 		gptr->user[cells[index][0]][cells[index][1]] = 0;
 	}
 
-	free_2d_array(cells,num_cells);
+	free_2d_array(cells, num_cells);
 }
 
-void generate(game *gptr, int *flags, char **strings, node **currentMove, GRBenv *env) {
+void generate(game *gptr, int *flags, char **strings, node **currentMove,
+		GRBenv *env) {
 	int cells_to_fill, cells_to_leave;
 	int **local_board, **old_board;
 
@@ -549,7 +551,7 @@ void generate(game *gptr, int *flags, char **strings, node **currentMove, GRBenv
 
 	old_board = init_2d_array(gptr->sideLength);
 	copy_2d_array(old_board, gptr->user, gptr->sideLength);
-	local_board = gen_board(gptr,cells_to_fill,env);
+	local_board = gen_board(gptr, cells_to_fill, env);
 
 	if (local_board == NULL) {
 		flags[INVALID_USER_COMMAND] = 1;
@@ -579,7 +581,6 @@ void undo(game *gptr, node **currentMove, int *flags) {
 void redo(game *gptr, node **currentMove, int *flags) {
 	/* call redo_aux */
 	redo_aux(gptr, currentMove, flags);
-	print_board(gptr, flags);
 }
 
 /*-------------Save---------------*/
@@ -597,19 +598,19 @@ void save(game *gptr, int *flags, char **strings, GRBenv *env) {
 			return;
 		}
 
-		if (!board_has_sol(gptr,env)) {
+		if (!board_has_sol(gptr, env)) {
 			printf("Error, unsolvable board cannot be saved in Edit mode\n");
 			flags[INVALID_USER_COMMAND] = 1;
 			return;
 		}
 
 		/* if not erroneous or unsolvable, try to save */
-		save_board(gptr,flags,strings);
+		save_board(gptr, flags, strings);
 		return;
 	}
 
 	/* if in solve mode, save board */
-	save_board(gptr,flags,strings);
+	save_board(gptr, flags, strings);
 
 	printf("Board saved successfully\n");
 
@@ -637,7 +638,7 @@ void hint(game *gptr, int *flags, char **strings, GRBenv *env) {
 	}
 
 	local_board = init_2d_array(gptr->sideLength);
-	success = gurobi_ilp(local_board, gptr,env);
+	success = gurobi_ilp(local_board, gptr, env);
 
 	if (!success) {
 		printf("Board is unsolvable\n");
@@ -742,23 +743,35 @@ void Exit(game *gptr, node **currentMove, char **strings, GRBenv *env) {
 
 /*------------Function pointer array-----------------*/
 /*initialize function pointer array with NULL values
-f ops[NUM_OPS] = { &solve, &edit, &mark_errors, &print_board, &set, &validate,
-		&guess, &generate, &undo, &redo, &save, &hint, &guess_hint,
-		&num_solutions, &autofill, &reset, &Exit };
+ f ops[NUM_OPS] = { &solve, &edit, &mark_errors, &print_board, &set, &validate,
+ &guess, &generate, &undo, &redo, &save, &hint, &guess_hint,
+ &num_solutions, &autofill, &reset, &Exit };
 
-Old solution to userOps. instead of a switch, all operations were loaded in an array,
-and an appropriate function pointer would be chosen in accordance to the parsed command.
-Deprecated due to strict compiling, which demands all parameters sent to a function to be
-used, making a generic function as an operation no better than a switch.
-*/
+ Old solution to userOps. instead of a switch, all operations were loaded in an array,
+ and an appropriate function pointer would be chosen in accordance to the parsed command.
+ Deprecated due to strict compiling, which demands all parameters sent to a function to be
+ used, making a generic function as an operation no better than a switch.
+ */
 
 /* public function using the function array  */
-void user_op(game *gptr, int *flags, char **strings, node **currentMove, GRBenv *env) {
+void user_op(game *gptr, int *flags, char **strings, node **currentMove,
+		GRBenv *env) {
+
+	printf("\nflags[EOF_EXIT] = %d\n",flags[EOF_EXIT]);
+
 	if (flags[BLANK_ROW] || flags[INVALID_USER_COMMAND]) {
+
+		/* added - in case EOF is after line*/
+		if (flags[EOF_EXIT]) {
+			printf("exiting through EOF - after blank or invalid command\n");
+
+			Exit(gptr, currentMove, strings, env);
+		}
+
 		return;
 	}
 
-	switch(flags[USER_COMMAND]) {
+	switch (flags[USER_COMMAND]) {
 	case 1:
 		solve(gptr, flags, strings, currentMove);
 		break;
@@ -808,8 +821,15 @@ void user_op(game *gptr, int *flags, char **strings, node **currentMove, GRBenv 
 		reset(gptr, flags, currentMove);
 		break;
 	case 17:
+		printf("exiting through EXIT command\n");
 		Exit(gptr, currentMove, strings, env);
 		break;
+	}
+
+	/* added - in case EOF is after line*/
+	if ((flags[EOF_EXIT]) && (flags[USER_COMMAND]!=EXIT)) {
+		printf("exiting through EOF - after command\n");
+		Exit(gptr, currentMove, strings, env);
 	}
 
 }

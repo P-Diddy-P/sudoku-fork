@@ -82,8 +82,8 @@ void print_changes(int **changes, int changes_num, int undo) {
 	}
 
 	for (itr = 0; itr < changes_num; itr++) {
-		printf("Row: %d, Col: %d changed from %d to %d\n", changes[itr][0]+1,
-				changes[itr][1]+1, (undo ? changes[itr][3] : changes[itr][2]),
+		printf("Row: %d, Col: %d changed from %d to %d\n", changes[itr][0] + 1,
+				changes[itr][1] + 1, (undo ? changes[itr][3] : changes[itr][2]),
 				(undo ? changes[itr][2] : changes[itr][3]));
 	}
 }
@@ -148,7 +148,6 @@ void append(node **current, int **changes, int *flags, int isFirst,
 	newNode->flagArray = calloc(NUM_FLAGS, sizeof(int));
 	memory_alloc_error();
 
-
 	copy_1d_array(newNode->flagArray, flags, NUM_FLAGS);
 
 	if (isFirst) {
@@ -193,7 +192,7 @@ void undo_aux(game *gptr, node **current, int *flags, int print_bool) {
 	copy_changes(gptr, *current, 1);
 
 	if (print_bool) {
-		print_changes((*current)->changes, (*current)->changesLen,1);
+		print_changes((*current)->changes, (*current)->changesLen, 1);
 	}
 
 	*current = (*current)->prev;
@@ -208,7 +207,8 @@ void redo_aux(game *gptr, node **current, int *flags) {
 	*current = (*current)->next;
 	copy_1d_array((*current)->flagArray, flags, NUM_FLAGS);
 	copy_changes(gptr, *current, 0);
-	print_changes((*current)->changes, (*current)->changesLen,0);
+	print_changes((*current)->changes, (*current)->changesLen, 0);
+	print_board(gptr, flags);
 }
 
 /* allocate new nodeBoard from recently changed board
@@ -243,7 +243,7 @@ void print_current_node(node *Node, node *current) {
 	printf("%s", (Node->next == NULL ? "Last\n" : ""));
 	printf("%s", (Node == current ? "Current\n" : ""));
 
-	print_changes(Node->changes, Node->changesLen,0);
+	print_changes(Node->changes, Node->changesLen, 0);
 
 }
 
