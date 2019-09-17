@@ -464,6 +464,8 @@ void guess(game *gptr, int *flags, char **strings, node **currentMove,
 	copy_2d_array(old_board, gptr->user, gptr->sideLength);
 	guess_aux(gptr, thres, env);
 
+	guess_aux(gptr, thres, env);
+
 	if (is_game_over(gptr, flags)) {
 		free_2d_array(old_board, gptr->sideLength);
 		return;
