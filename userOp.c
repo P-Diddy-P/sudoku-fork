@@ -757,13 +757,11 @@ void Exit(game *gptr, node **currentMove, char **strings, GRBenv *env) {
 void user_op(game *gptr, int *flags, char **strings, node **currentMove,
 		GRBenv *env) {
 
-	printf("\nflags[EOF_EXIT] = %d\n",flags[EOF_EXIT]);
 
 	if (flags[BLANK_ROW] || flags[INVALID_USER_COMMAND]) {
 
-		/* added - in case EOF is after line*/
+		/* added - in case EOF is after blank or invalid command */
 		if (flags[EOF_EXIT]) {
-			printf("exiting through EOF - after blank or invalid command\n");
 
 			Exit(gptr, currentMove, strings, env);
 		}
@@ -821,16 +819,10 @@ void user_op(game *gptr, int *flags, char **strings, node **currentMove,
 		reset(gptr, flags, currentMove);
 		break;
 	case 17:
-		printf("exiting through EXIT command\n");
 		Exit(gptr, currentMove, strings, env);
 		break;
 	}
 
-	/* added - in case EOF is after line*/
-	if ((flags[EOF_EXIT]) && (flags[USER_COMMAND]!=EXIT)) {
-		printf("exiting through EOF - after command\n");
-		Exit(gptr, currentMove, strings, env);
-	}
 
 }
 

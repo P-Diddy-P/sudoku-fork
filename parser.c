@@ -10,8 +10,6 @@
 
 # include "parser.h"
 
-
-
 /* reads line until first newline char encountered,
  * using fgets on the standard input. if line is not longer
  * than 257 chars including last newline char, returns an
@@ -22,20 +20,22 @@ char* parse_get_line(int* flags, char* line) {
 	int k;
 	int valid_line_length = 0;
 	char c;
-
+	char *null_line_chk;
 
 	/* if EOF encountered BEFORE reading the line,
 	 * it must be that the line is blank, in the end of file.
 	 * flag EOF_EXIT and return */
 	if (feof(stdin)) {
 		flags[EOF_EXIT] = 1;
-		printf("FIRST EOF\n");
 		return 0;
 	}
 
 	/* get line using fgets - reads until first newline
-	 * cahr encountered  - what about EOF?*/
-	fgets(line, BUFF_SIZE, stdin);
+	 * char encountered.
+	 * for the specific case where the line is NULL, i.e,
+	 * there are no whitespace, it must be the last line,
+	 * because even a "blank" line has a newline char */
+	null_line_chk = fgets(line, BUFF_SIZE, stdin);
 
 	/* for the case that EOF reached after reading the line
 	 * TODO need to check for EOF before calling parse_user or get_line
@@ -45,7 +45,11 @@ char* parse_get_line(int* flags, char* line) {
 	 * and then exit, withput reading another line */
 	if (feof(stdin)) {
 		flags[EOF_EXIT] = 1;
-		printf("SECOND EOF\n");
+
+		/* last line contains EOF only - line is NULL, return NULL */
+		if (null_line_chk==NULL){
+			return NULL;
+		}
 
 	}
 
@@ -61,9 +65,8 @@ char* parse_get_line(int* flags, char* line) {
 		return line;
 	} else {
 
-		while (( (c = fgetc(stdin)) != 10 ) || ((c = fgetc(stdin)) != EOF)) {
+		while (((c = fgetc(stdin)) != 10) || ((c = fgetc(stdin)) != EOF)) {
 			/*advance stdin pointer until newline or EOF */
-
 
 		}
 
@@ -124,7 +127,6 @@ void parse_print_command_modes_error(int num_args, ...) {
 	}
 	va_end(list);
 
-
 	/* print error */
 	printf("Command %s not available in current mode"
 			", is available in %s %s%s%s only\n", to_print[0], to_print[1],
@@ -162,7 +164,8 @@ int is_token_ws(char *str) {
  * the optional argument is used to differentiate between
  * SOLVE_STR and "save" which have a mandatory path
  * and EDIT_STR where the path is optional*/
-void parse_command_path(int* flags, char* token, char *strings[], int is_optional) {
+void parse_command_path(int* flags, char* token, char *strings[],
+		int is_optional) {
 	char *path;
 	int k = 0;
 
@@ -173,7 +176,8 @@ void parse_command_path(int* flags, char* token, char *strings[], int is_optiona
 			strings[PATH] = NULL;
 			return;
 		} else {
-			printf("Not enough arguments for command %s\n", strings[USER_COMMAND_NAME]);
+			printf("Not enough arguments for command %s\n",
+					strings[USER_COMMAND_NAME]);
 			parse_print_command_correct_args(flags);
 			flags[INVALID_USER_COMMAND] = 1;
 			return;
@@ -261,9 +265,14 @@ void parse_command_no_args(int* flags, char *strings[], char* token) {
 void parse_line(char *line, int *flags, char* strings[]) {
 	char* token;
 
+	/* last line is EOF  */
+	if (line==NULL){
+		flags[USER_COMMAND]=EXIT;
+		return;
+	}
+
 	token = strtok(line, DELIM);
 
-	printf("token == %s\n",token);
 
 	if (token == NULL || is_token_ws(token)) { /* case blank row, only whitespace or tabs*/
 		flags[BLANK_ROW] = 1;
@@ -295,7 +304,8 @@ void parse_line(char *line, int *flags, char* strings[]) {
 
 	else if ((strcmp(token, PRINT_BOARD_STR)) == 0) {
 		if (flags[MODE] == MODE_INIT) {
-			parse_print_command_modes_error(3, PRINT_BOARD_STR, SOLVE_STR, EDIT_STR);
+			parse_print_command_modes_error(3, PRINT_BOARD_STR, SOLVE_STR,
+					EDIT_STR);
 			flags[INVALID_USER_COMMAND] = 1;
 		} else {
 			flags[USER_COMMAND] = PRINT_BOARD;
@@ -317,7 +327,8 @@ void parse_line(char *line, int *flags, char* strings[]) {
 
 	else if ((strcmp(token, VALIDATE_STR)) == 0) {
 		if (flags[MODE] == MODE_INIT) {
-			parse_print_command_modes_error(3, VALIDATE_STR, SOLVE_STR, EDIT_STR);
+			parse_print_command_modes_error(3, VALIDATE_STR, SOLVE_STR,
+					EDIT_STR);
 			flags[INVALID_USER_COMMAND] = 1;
 		} else {
 			flags[USER_COMMAND] = VALIDATE;
@@ -476,14 +487,13 @@ void parse_user(int *flags, char *strings[]) {
 	line = parse_get_line(flags, input);
 
 	if (flags[INVALID_LINE_LENGTH]) {
-		printf("Command length invalid, at most 256 characters per line are allowed.\n");
-		flags[INVALID_USER_COMMAND]=1;
+		printf(
+				"Command length invalid, at most 256 characters per line are allowed.\n");
+		flags[INVALID_USER_COMMAND] = 1;
 		return;
 	}
 
 	parse_line(line, flags, strings);
-
-
 
 }
 
