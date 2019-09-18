@@ -115,8 +115,7 @@ int gurobi_ilp(int **board, game *gptr, GRBenv *env) {
 	 First copy the pre-solved gptr->user, because we are only copying the "new" values
 	 */
 
-	copy_2d_array(board,gptr->user,gptr->sideLength);
-
+	copy_2d_array(board, gptr->user, gptr->sideLength);
 	for (empty_cell_index = 0; empty_cell_index < empty_num;
 			empty_cell_index++) {
 
@@ -135,7 +134,7 @@ int gurobi_ilp(int **board, game *gptr, GRBenv *env) {
 	}
 
 	free(objective_solution);
-	free_2d_array(empty_cells, gptr->sideLength);
+	free_2d_array(empty_cells, empty_num);
 
 	return 1;
 }

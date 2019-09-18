@@ -17,8 +17,7 @@ int main() {
 	node *currentMove;
 	GRBenv *env = NULL;
 
-	SP_BUFF_SET()
-	;
+	SP_BUFF_SET();
 	srand(10);
 
 	gptr = calloc(1, sizeof(game));
@@ -41,6 +40,7 @@ int main() {
 	}
 
 	flags[MODE] = MODE_INIT;
+	flags[MARK_ERRORS_FLAG] = 1; /* default value for mark errors is 1 */
 	print_art();
 
 	while (1) {

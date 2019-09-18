@@ -399,16 +399,13 @@ void set(game *gptr, int *flags, char **strings, node **currentMove) {
 
 /* Check if board is solvable */
 void validate(game *gptr, GRBenv *env) {
-	/* update board errors */
 	update_board_errors(gptr);
 
-	/* if board is erroneous, return error */
 	if (board_has_errors(gptr)) {
 		printf("Error, board is erroneous and thus not solvable\n");
 		return;
 	}
 
-	/* check if board has solution using ILP from ILPsolver module */
 	if (board_has_sol(gptr, env)) {
 		printf("Board is solvable\n");
 	} else {
