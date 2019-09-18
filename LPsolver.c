@@ -144,7 +144,7 @@ int guess_hint_aux(game *gptr, int row, int col, GRBenv *env) {
         return -1;
     }
 
-    printf("Possible values for [%d, %d]:  ", col ,row); /* flip coordinates when printing due to X,Y scheme */
+    printf("Possible values for row: %d, col: %d:  ", row+1 ,col+1); /* flip coordinates when printing due to X,Y scheme */
     for (i=0; i<gptr->sideLength; i++) {
         if (solution_probs[hint_cell * gptr->sideLength + i] > 0.0) {
             printf("%d:%.2f  ", i+1, solution_probs[hint_cell * gptr->sideLength + i]);
