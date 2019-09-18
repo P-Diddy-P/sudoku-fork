@@ -138,26 +138,19 @@ int** gen_board(game *gptr, int cells_to_fill, GRBenv *env) {
 	int cell_fill_success, sol_success = 0, empty_num, attempts_counter = 0,
 			rand_ind, itr, valid_vals_cell_num, i, j;
 
-	/* save original state of gptr->user, init solved_board */
 	original_board = init_2d_array(gptr->sideLength);
 	solved_board = init_2d_array(gptr->sideLength);
 	copy_2d_array(original_board,gptr->user,gptr->sideLength);
 
-	/* enumerate empty cells of board */
 	empty_num = enumerate_empty_cells(gptr, &empty_cells);
 	valid_vals_cell = calloc(gptr->sideLength, sizeof(int));
 	memory_alloc_error();
 
-	/* try 1000 times */
 	while (attempts_counter++ < 1000) {
-
-		/* randomize cell array and reset gptr to initial state */
 		randomize_cell_array(empty_cells, empty_num);
 		copy_2d_array(gptr->user, original_board, gptr->sideLength);
-
 		cell_fill_success = 1;
 
-		/* pick random cell, and try to fill */
 		for (itr = 0; itr < cells_to_fill; itr++) {
 			i = empty_cells[itr][0];
 			j = empty_cells[itr][1];
@@ -165,12 +158,10 @@ int** gen_board(game *gptr, int cells_to_fill, GRBenv *env) {
 			enumerate_valid_values_for_cell(valid_vals_cell, i, j, gptr,
 					&valid_vals_cell_num);
 
-			/* if no values are valid for cell, break for and return to loop */
 			if (valid_vals_cell_num == 0) {
 				cell_fill_success = 0;
 				break;
 			} else {
-				/* pick a random valid cell, and place it in gptr */
 				rand_ind = rand() % valid_vals_cell_num;
 				gptr->user[i][j] = valid_vals_cell[rand_ind];
 			}

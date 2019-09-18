@@ -517,6 +517,7 @@ void generate(game *gptr, int *flags, char **strings, node **currentMove,
 	if (local_board == NULL) {
 		flags[INVALID_USER_COMMAND] = 1;
 		free_2d_array(old_board, gptr->sideLength);
+		printf("Cannot generate a solvable board from the current board\n");
 		return;
 	}
 
