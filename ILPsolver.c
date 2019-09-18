@@ -7,7 +7,6 @@
 
 #include "ILPsolver.h"
 
-
 /* Receives indices [i,j] and a board, and returns an array with all valid
  * values for [i,j] */
 
@@ -77,9 +76,9 @@ void randomize_array(int* array, int length) {
 }
 
 /* Solve a board and fill values, if solution exists
-gets pointer to cell map (maybe generate cell map inside function?) and to board
-this function is called from gen_board, which takes care of filling board with X random values
-in gen_board, a local copy of gptr->user is created  */
+ gets pointer to cell map (maybe generate cell map inside function?) and to board
+ this function is called from gen_board, which takes care of filling board with X random values
+ in gen_board, a local copy of gptr->user is created  */
 int gurobi_ilp(int **board, game *gptr, GRBenv *env) {
 	int **empty_cells = NULL;
 	double *objective_solution = NULL;
@@ -87,7 +86,7 @@ int gurobi_ilp(int **board, game *gptr, GRBenv *env) {
 
 	empty_num = enumerate_empty_cells(gptr, &empty_cells);
 	has_sol = gurobi_general(gptr, empty_cells, &objective_solution, empty_num,
-								GRB_BINARY, env);
+	GRB_BINARY, env);
 
 	if (has_sol < 0) {
 		printf("No solution found\n");
@@ -97,37 +96,49 @@ int gurobi_ilp(int **board, game *gptr, GRBenv *env) {
 		return 0;
 	}
 
-	if (has_sol != empty_num){
-		printf("Objective value incorrect, ...\n");
-		/* free allocated objective_solution and empty_cells*/
+	if (has_sol != empty_num) {
+		printf("Objective value incorrect...\n");
+		/* free allocated objective_solution and empty_cells */
 		free(objective_solution);
-		free_2d_array(empty_cells,gptr->sideLength);
+		free_2d_array(empty_cells, gptr->sideLength);
 		return 0;
 	}
 
 	/* else, produce solution from objective_solution array. Explanation:
-		The linear program variables X_ijk are IMPLICTLY encoded in
-		the indices of the double array "objective_solution".
-		The array conatains the value of X_ijk, where every index in objective_solution
-		corresponds to the fourmula "the index of the cell in empty_cells, times sideLength,
-		plus the value-1". The "origin" of this index system is in the objective function setting
-		If it equals 1.0, it means that the the cell [i,j] encoded in empty_cells,
-		should have the value+1 (index to value)
-	*/
-	for (empty_cell_index=0;empty_cell_index<empty_num;empty_cell_index++){
-		for (value=0;value<gptr->sideLength;value++){
-			if (objective_solution[empty_cell_index*gptr->sideLength+value]==1.0){
-				board[empty_cells[empty_cell_index][0]][empty_cells[empty_cell_index][1]] = value+1;
+	 The linear program variables X_ijk are IMPLICTLY encoded in
+	 the indices of the double array "objective_solution".
+	 The array conatains the value of X_ijk, where every index in objective_solution
+	 corresponds to the fourmula "the index of the cell in empty_cells, times sideLength,
+	 plus the value-1". The "origin" of this index system is in the objective function setting
+	 If it equals 1.0, it means that the the cell [i,j] encoded in empty_cells,
+	 should have the value+1 (index to value).
+	 First copy the pre-solved gptr->user, because we are only copying the "new" values
+	 */
+
+	copy_2d_array(board,gptr->user,gptr->sideLength);
+
+	for (empty_cell_index = 0; empty_cell_index < empty_num;
+			empty_cell_index++) {
+
+		/* printf("solution for cell [%d][%d]={ ", empty_cells[empty_cell_index][0], empty_cells[empty_cell_index][1]); */
+		for (value = 0; value < gptr->sideLength; value++) {
+			/* printf("val%d=%.2f ",value+1, objective_solution[empty_cell_index * gptr->sideLength + value]); */
+
+			if (objective_solution[empty_cell_index * gptr->sideLength + value]
+					== 1.0) {
+
+				board[empty_cells[empty_cell_index][0]][empty_cells[empty_cell_index][1]] =
+						value + 1;
 			}
 		}
+		/* printf("}\n"); */
 	}
 
 	free(objective_solution);
-	free_2d_array(empty_cells,gptr->sideLength);
+	free_2d_array(empty_cells, gptr->sideLength);
 
-    return 1;
+	return 1;
 }
-
 
 /* For Generate: returns solved board, NULL else
  * Logic of generate: assumes at least X cells are empty,
@@ -136,22 +147,33 @@ int gurobi_ilp(int **board, game *gptr, GRBenv *env) {
  * and fill them
  * TODO - review logic: maybe the meaning of "pick X cells and fill..."
  * was to first pick the cells, and then try to find values for them */
-int** gen_board(game *gptr, int cells_to_fill,GRBenv *env) {
-	int **local;
+int** gen_board(game *gptr, int cells_to_fill, GRBenv *env) {
+	int **original_board, **solved_board;
 	int **empty_cells;
 	int *valid_vals_cell;
 	int cell_fill_success, sol_success = 0, empty_num, attempts_counter = 0,
 			rand_ind, itr, valid_vals_cell_num, i, j;
 
-	local = init_2d_array(gptr->sideLength);
+	/* save original state of gptr->user, init solved_board */
+	original_board = init_2d_array(gptr->sideLength);
+	solved_board = init_2d_array(gptr->sideLength);
+	copy_2d_array(original_board,gptr->user,gptr->sideLength);
+
+	/* enumerate empty cells of board */
 	empty_num = enumerate_empty_cells(gptr, &empty_cells);
 	valid_vals_cell = calloc(gptr->sideLength, sizeof(int));
 	memory_alloc_error();
 
+	/* try 1000 times */
 	while (attempts_counter++ < 1000) {
+
+		/* randomize cell array and reset gptr to initial state */
 		randomize_cell_array(empty_cells, empty_num);
+		copy_2d_array(gptr->user, original_board, gptr->sideLength);
+
 		cell_fill_success = 1;
 
+		/* pick random cell, and try to fill */
 		for (itr = 0; itr < cells_to_fill; itr++) {
 			i = empty_cells[itr][0];
 			j = empty_cells[itr][1];
@@ -159,12 +181,14 @@ int** gen_board(game *gptr, int cells_to_fill,GRBenv *env) {
 			enumerate_valid_values_for_cell(valid_vals_cell, i, j, gptr,
 					&valid_vals_cell_num);
 
+			/* if no values are valid for cell, break for and return to loop */
 			if (valid_vals_cell_num == 0) {
 				cell_fill_success = 0;
 				break;
 			} else {
+				/* pick a random valid cell, and place it in gptr */
 				rand_ind = rand() % valid_vals_cell_num;
-				local[i][j] = valid_vals_cell[rand_ind];
+				gptr->user[i][j] = valid_vals_cell[rand_ind];
 			}
 		}
 
@@ -172,31 +196,33 @@ int** gen_board(game *gptr, int cells_to_fill,GRBenv *env) {
 			continue;
 		}
 
-		sol_success = gurobi_ilp(local, gptr, env);
+		sol_success = gurobi_ilp(solved_board, gptr, env);
 		if (sol_success) {
 			break;
 		}
 	}
-
 	free_2d_array(empty_cells, empty_num);
 	free(valid_vals_cell);
+
 	if (!sol_success) {
-		free_2d_array(local, gptr->sideLength);
+		copy_2d_array(gptr->user,original_board,gptr->sideLength);
+		free_2d_array(original_board, gptr->sideLength);
+		free_2d_array(solved_board,gptr->sideLength);
 		return NULL;
 	} else {
-		return local;
+		copy_2d_array(gptr->user,original_board,gptr->sideLength);
+		free_2d_array(original_board, gptr->sideLength);
+		return solved_board;
 	}
 }
 
-/* For Validate: returns 1 if board is solvable, 0 else */
 int board_has_sol(game *gptr, GRBenv *env) {
 	int **local;
 	int success;
 	local = init_2d_array(gptr->sideLength);
 	copy_2d_array(local, gptr->user, gptr->sideLength);
 
-	success = gurobi_ilp(local, gptr,env);
+	success = gurobi_ilp(local, gptr, env);
 	free_2d_array(local, gptr->sideLength);
 	return success;
 }
-

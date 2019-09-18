@@ -55,7 +55,7 @@ int enumerate_empty_cells(game *gptr, int ***empty_cells) {
 	}
 }
 
-int add_single_value_constraints(GRBenv *env, GRBmodel *model, int **cell_map,
+int add_single_value_constraints(GRBenv *env, GRBmodel *model, /*int **cell_map, */
 		game *gptr, double *constraint_coefficient, int empty_cells) {
 	int k, i, error, constraint_vars;
 	int *constraint_index = calloc(gptr->sideLength, sizeof(int));
@@ -64,10 +64,7 @@ int add_single_value_constraints(GRBenv *env, GRBmodel *model, int **cell_map,
 		constraint_vars = 0;
 
 		for (i = 0; i < gptr->sideLength; i++) { /* cell value */
-			if (check_valid_value(gptr, cell_map[k][0], cell_map[k][1],
-					i + 1)) {
-				constraint_index[constraint_vars++] = k * gptr->sideLength + i;
-			}
+			constraint_index[constraint_vars++] = k * gptr->sideLength + i;
 		}
 
 		error = GRBaddconstr(model, constraint_vars, constraint_index,
@@ -255,7 +252,7 @@ int add_constraints(GRBenv *env, GRBmodel *model, int **cell_map, game *gptr,
 		double *constraint_coefficient, int empty_cells) {
 	int error;
 
-	error = add_single_value_constraints(env, model, cell_map, gptr,
+	error = add_single_value_constraints(env, model, /* cell_map, */ gptr,
 			constraint_coefficient, empty_cells);
 	if (error) {
 		printf("Error while adding single cell value constraints.\n");
@@ -382,6 +379,12 @@ int gurobi_general(game *gptr, int **cell_map, double **objective_solution,
 					variable_upper_bound, variable_type, NULL);
 	if (error) {
 		printf("ERROR %d GRBnewmodel: %s\n", error, GRBgeterrormsg(env));
+		return -1;
+	}
+
+	error = GRBsetintattr(model, GRB_INT_ATTR_MODELSENSE, GRB_MAXIMIZE);
+	if (error) {
+		printf("ERROR %d GRBsetintattr(): %s\n", error, GRBgeterrormsg(env));
 		return -1;
 	}
 
