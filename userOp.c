@@ -578,6 +578,7 @@ void save(game *gptr, int *flags, char **strings, GRBenv *env) {
 
 		/* if not erroneous or unsolvable, try to save */
 		save_board(gptr, flags, strings);
+		printf("Board saved successfully\n");
 		return;
 	}
 
@@ -609,6 +610,23 @@ void hint(game *gptr, int *flags, char **strings, GRBenv *env) {
 		return;
 	}
 
+	update_board_errors(gptr);
+
+	if (board_has_errors(gptr)) {
+		printf("Error, board is erroneous, cannot give hint\n");
+		return;
+	}
+
+	if (gptr->flag[row][col] == FIXED) {
+		printf("Error, cell is fixed, cannot give hint\n");
+		return;
+	}
+
+	if (gptr->user[row][col] != 0) {
+		printf("Error, cell is not zero, cannot give hint\n");
+		return;
+	}
+
 	local_board = init_2d_array(gptr->sideLength);
 	success = gurobi_ilp(local_board, gptr, env);
 
@@ -617,7 +635,8 @@ void hint(game *gptr, int *flags, char **strings, GRBenv *env) {
 		return;
 	}
 
-	printf("Hint to row:%d, col:%d: %d\n", row, col, local_board[row - 1][col - 1]);
+	printf("Hint to row:%d, col:%d: %d\n", row, col,
+			local_board[row - 1][col - 1]);
 	free_2d_array(local_board, gptr->sideLength);
 }
 
@@ -641,7 +660,7 @@ void guess_hint(game *gptr, int *flags, char **strings, GRBenv *env) {
 		return;
 	}
 
-	guess_hint_aux(gptr, row, col, env);
+	guess_hint_aux(gptr, row - 1, col - 1, env);
 }
 
 /*------------Num Solutions-----------------*/
@@ -721,7 +740,6 @@ void Exit(game *gptr, node **currentMove, char **strings, GRBenv *env) {
 void user_op(game *gptr, int *flags, char **strings, node **currentMove,
 		GRBenv *env) {
 
-
 	if (flags[BLANK_ROW] || flags[INVALID_USER_COMMAND]) {
 
 		/* added - in case EOF is after blank or invalid command */
@@ -786,7 +804,6 @@ void user_op(game *gptr, int *flags, char **strings, node **currentMove,
 		Exit(gptr, currentMove, strings, env);
 		break;
 	}
-
 
 }
 

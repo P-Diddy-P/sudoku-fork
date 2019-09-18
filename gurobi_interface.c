@@ -55,7 +55,7 @@ int enumerate_empty_cells(game *gptr, int ***empty_cells) {
 }
 
 int add_single_value_constraints(GRBenv *env, GRBmodel *model, /*int **cell_map, */
-		game *gptr, double *constraint_coefficient, int empty_cells) {
+game *gptr, double *constraint_coefficient, int empty_cells) {
 	int k, i, error, constraint_vars;
 	int *constraint_index = calloc(gptr->sideLength, sizeof(int));
 
@@ -251,7 +251,7 @@ int add_constraints(GRBenv *env, GRBmodel *model, int **cell_map, game *gptr,
 		double *constraint_coefficient, int empty_cells) {
 	int error;
 
-	error = add_single_value_constraints(env, model, /* cell_map, */ gptr,
+	error = add_single_value_constraints(env, model, /* cell_map, */gptr,
 			constraint_coefficient, empty_cells);
 	if (error) {
 		printf("Error while adding single cell value constraints.\n");
@@ -310,8 +310,8 @@ double get_objective_coefficient(game *gptr, int row, int col, int value) {
 		}
 
 		for (j = start_col; j < start_col + gptr->cols; j++) {
-			if (j != col && !gptr->user[row][j]
-					&& check_valid_value(gptr, row, j, value)) {
+			if (j != col && !gptr->user[i][j]
+					&& check_valid_value(gptr, i, j, value)) {
 				contender_cells++;
 			}
 		}
@@ -333,13 +333,18 @@ double get_objective_coefficient(game *gptr, int row, int col, int value) {
  value. */
 void set_objective_function(game *gptr, int **cell_map,
 		double *objective_coefficient, int empty_cells) {
-	int i, k;
+	int i, k, row, col;
 
 	for (i = 0; i < empty_cells; i++) {
 		for (k = 0; k < gptr->sideLength; k++) {
-			objective_coefficient[i * gptr->sideLength + k] =
-					get_objective_coefficient(gptr, cell_map[i][0],
-							cell_map[i][1], k);
+			row = cell_map[i][0];
+			col = cell_map[i][1];
+
+			if (check_valid_value(gptr, row, col, k + 1)) {
+				objective_coefficient[i * gptr->sideLength + k] =
+						get_objective_coefficient(gptr, row,
+								col, k+1);
+			}
 		}
 	}
 }
@@ -374,8 +379,8 @@ int gurobi_general(game *gptr, int **cell_map, double **objective_solution,
 	}
 
 	error = GRBnewmodel(env, &model, "sudoku guess",
-					empty_cells * gptr->sideLength, objective_coefficient, NULL,
-					variable_upper_bound, variable_type, NULL);
+			empty_cells * gptr->sideLength, objective_coefficient, NULL,
+			variable_upper_bound, variable_type, NULL);
 	if (error) {
 		printf("ERROR %d GRBnewmodel: %s\n", error, GRBgeterrormsg(env));
 		return -1;
@@ -431,10 +436,10 @@ int gurobi_general(game *gptr, int **cell_map, double **objective_solution,
 	}
 
 	*objective_solution = calloc(empty_cells * gptr->sideLength,
-									sizeof(double));
+			sizeof(double));
 
 	error = GRBgetdblattrarray(model, GRB_DBL_ATTR_X, 0,
-					empty_cells * gptr->sideLength, *objective_solution);
+			empty_cells * gptr->sideLength, *objective_solution);
 	if (error) {
 		printf("ERROR %d GRBgetdblattrarray(): %s\n", error,
 				GRBgeterrormsg(env));
