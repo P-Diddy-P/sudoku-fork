@@ -317,13 +317,10 @@ double get_objective_coefficient(game *gptr, int row, int col, int value) {
 		}
 	}
 
-	if (!contender_cells) {
-		return (double) 1.0;
-	} else {
-		/* return 1.0; objective function v0.0 (naive) */
-		/* return (double) (1.0 / contender_cells); objective function v1.0 */
-		return (double) (1.0 / pow(2.0, contender_cells)); /* objective function v2.0 */
-	}
+	/* return 1.0; objective function v0.0 (naive) */
+	return (double) (1.0 / contender_cells + 1); /*objective function v1.0 */
+	/*return (double) (1.0 / pow(2.0, contender_cells));  objective function v2.0 */
+
 }
 
 /* Currently there are 3 options to setting objective coefficients:
@@ -342,8 +339,7 @@ void set_objective_function(game *gptr, int **cell_map,
 
 			if (check_valid_value(gptr, row, col, k + 1)) {
 				objective_coefficient[i * gptr->sideLength + k] =
-						get_objective_coefficient(gptr, row,
-								col, k+1);
+						get_objective_coefficient(gptr, row, col, k + 1);
 			}
 		}
 	}
