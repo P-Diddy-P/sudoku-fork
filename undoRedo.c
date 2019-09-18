@@ -208,7 +208,6 @@ void redo_aux(game *gptr, node **current, int *flags) {
 	copy_1d_array((*current)->flagArray, flags, NUM_FLAGS);
 	copy_changes(gptr, *current, 0);
 	print_changes((*current)->changes, (*current)->changesLen, 0);
-	print_board(gptr, flags);
 }
 
 /* allocate new nodeBoard from recently changed board

@@ -543,6 +543,7 @@ void undo(game *gptr, node **currentMove, int *flags) {
 void redo(game *gptr, node **currentMove, int *flags) {
 	redo_aux(gptr, currentMove, flags);
 	update_board_errors(gptr);
+	print_board(gptr, flags);
 }
 
 /*-------------Save---------------*/
