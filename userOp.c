@@ -194,9 +194,9 @@ void solve(game *gptr, int *flags, char **strings, node **currentMove) {
 		return;
 	}
 
-
 	init_new_undoRedo(gptr, currentMove, flags);
 	printf("Loaded board in Solve mode\n");
+	update_board_errors(gptr);
 	print_board(gptr, flags);
 }
 
@@ -424,8 +424,6 @@ void guess(game *gptr, int *flags, char **strings, node **currentMove,
 
 	old_board = init_2d_array(gptr->sideLength);
 	copy_2d_array(old_board, gptr->user, gptr->sideLength);
-	guess_aux(gptr, thres, env);
-
 	guess_aux(gptr, thres, env);
 
 	if (is_game_over(gptr, flags)) {
@@ -678,6 +676,7 @@ void autofill(game *gptr, int *flags, node **currentMove) {
 
 	commit_move(currentMove, gptr, old_board, flags, 0);
 	free_2d_array(old_board, gptr->sideLength);
+	update_board_errors(gptr);
 }
 
 /*------------Reset-----------------*/
