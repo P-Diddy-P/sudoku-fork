@@ -561,6 +561,7 @@ void generate(game *gptr, int *flags, char **strings, node **currentMove,
 /* Goes back one step in list, if exists */
 void undo(game *gptr, node **currentMove, int *flags) {
 	undo_aux(gptr, currentMove, flags, 1);
+	update_board_errors(gptr);
 	print_board(gptr, flags);
 }
 
@@ -568,8 +569,8 @@ void undo(game *gptr, node **currentMove, int *flags) {
 
 /* Goes forward one step in list, if exists */
 void redo(game *gptr, node **currentMove, int *flags) {
-	/* call redo_aux */
 	redo_aux(gptr, currentMove, flags);
+	update_board_errors(gptr);
 }
 
 /*-------------Save---------------*/
@@ -634,8 +635,7 @@ void hint(game *gptr, int *flags, char **strings, GRBenv *env) {
 		return;
 	}
 
-	printf("Hint to row:%d, col:%d: %d\n", row, col, local_board[row][col]);
-
+	printf("Hint to row:%d, col:%d: %d\n", row, col, local_board[row - 1][col - 1]);
 	free_2d_array(local_board, gptr->sideLength);
 }
 
@@ -714,7 +714,7 @@ void reset(game *gptr, int *flags, node **currentMove) {
 		undo_aux(gptr, currentMove, flags, 0);
 	}
 
-	/* print board after done*/
+	update_board_errors(gptr);
 	print_board(gptr, flags);
 }
 
