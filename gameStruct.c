@@ -23,7 +23,7 @@ char get_control_char(game *gptr, int row, int col, int *flags) {
 	print_error = ((flags[MODE] == MODE_EDIT)
 			|| (flags[MODE] == MODE_SOLVE && flags[MARK_ERRORS_FLAG]));
 
-	if (gptr->flag[row][col] == FIXED) {
+	if (gptr->flag[row][col] == FIXED && flags[MODE] == MODE_SOLVE) {
 		return '.';
 	}
 
@@ -219,6 +219,19 @@ void copy_board(game *gptr, int **dstBoard, int toGame, int isFixed) {
 						isFixed ?
 								(gptr->flag[i][j] == 1 ? gptr->user[i][j] : 0) :
 								gptr->user[i][j]);
+			}
+		}
+	}
+}
+
+/* remove all fixed flags of a game */
+void remove_fixed_flags(game *gptr) {
+	int i, j;
+
+	for (i=0; i<gptr->sideLength; i++) {
+		for (j=0; j<gptr->sideLength; j++) {
+			if (gptr->flag[i][j] == FIXED) {
+				gptr->flag[i][j] = VALID;
 			}
 		}
 	}

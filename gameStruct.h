@@ -86,6 +86,7 @@ int find_next_empty_cell(game *gptr, int *rowAddress, int *colAddress);
  * gptr->[*rowAddress][*colAddress] == 0, then the given addresses will not change value.
  */
 
+void remove_fixed_flags(game *gptr);
 
 /* ADDED FUNCTION - free_game_pointer, freeing the dynamically allocated space
  * for a game instance*/

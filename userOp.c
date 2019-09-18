@@ -228,39 +228,29 @@ void edit(game *gptr, int *flags, char **strings, node **currentMove) {
 		init_board(gptr, 3, 3);
 	}
 
-	/* if path provided */
 	else {
-		/* create local board with loaded board */
 		load_board(local_gptr, flags, strings);
-
-		/* if loading failed, return error */
 		if (flags[INVALID_USER_COMMAND]) {
 			return;
 		}
 
-		/* check if fixed cells in loaded board are erroneous.
-		 * if they are, return error and free board memory */
 		if (is_fixed_erroneous(local_gptr)) {
 			printf("Error, loaded board contains erroneous fixed cells.\n");
 			free_game_pointer(local_gptr);
 			flags[INVALID_USER_COMMAND] = 1;
 			return;
 		}
-		/* if board is valid and not erroneous, free old gptr memory and plug
-		 * newly loded board to gptr */
+
 		free_game_pointer(gptr);
 		assign_game_pointer(gptr, local_gptr);/* TODO - discuss - do we want to change the structure
 		 so gptr will be a double pointer (**gptr), so the value of (*gptr) will be */
-
 	}
 
 	/* set mode - BEFORE creating new list -
 	 * otherwise the first node is recorded with mode flag zero */
 	flags[MODE] = MODE_EDIT;
-
-	/* initialize new empty undoRedo list with new board */
 	init_new_undoRedo(gptr, currentMove, flags);
-
+	remove_fixed_flags(gptr);
 	update_board_errors(gptr);
 
 	printf("Loaded board in Edit mode\n");
