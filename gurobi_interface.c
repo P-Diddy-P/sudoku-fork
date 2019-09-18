@@ -50,7 +50,6 @@ int enumerate_empty_cells(game *gptr, int ***empty_cells) {
 	if (k == empty_num) {
 		return empty_num;
 	} else {
-		printf("error, could not fill entire map.\n");
 		return -1;
 	}
 }
@@ -419,10 +418,8 @@ int gurobi_general(game *gptr, int **cell_map, double **objective_solution,
 		printf("ERROR %d GRBgetintattr(): %s\n", error, GRBgeterrormsg(env));
 		return -1;
 	} else if (optimstatus == GRB_INFEASIBLE) {
-		printf("No feasible solution found.\n");
 		return -2;
 	} else if (optimstatus == GRB_UNBOUNDED) {
-		printf("Linear model received is unbounded.\n");
 		return -2;
 	}
 

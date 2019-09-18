@@ -89,18 +89,8 @@ int gurobi_ilp(int **board, game *gptr, GRBenv *env) {
 	GRB_BINARY, env);
 
 	if (has_sol < 0) {
-		printf("No solution found\n");
-
 		free(objective_solution);
-		free_2d_array(empty_cells, gptr->sideLength);
-		return 0;
-	}
-
-	if (has_sol != empty_num) {
-		printf("Objective value incorrect...\n");
-		/* free allocated objective_solution and empty_cells */
-		free(objective_solution);
-		free_2d_array(empty_cells, gptr->sideLength);
+		free_2d_array(empty_cells, empty_num);
 		return 0;
 	}
 
@@ -119,10 +109,7 @@ int gurobi_ilp(int **board, game *gptr, GRBenv *env) {
 	for (empty_cell_index = 0; empty_cell_index < empty_num;
 			empty_cell_index++) {
 
-		/* printf("solution for cell [%d][%d]={ ", empty_cells[empty_cell_index][0], empty_cells[empty_cell_index][1]); */
 		for (value = 0; value < gptr->sideLength; value++) {
-			/* printf("val%d=%.2f ",value+1, objective_solution[empty_cell_index * gptr->sideLength + value]); */
-
 			if (objective_solution[empty_cell_index * gptr->sideLength + value]
 					== 1.0) {
 
@@ -130,12 +117,10 @@ int gurobi_ilp(int **board, game *gptr, GRBenv *env) {
 						value + 1;
 			}
 		}
-		/* printf("}\n"); */
 	}
 
 	free(objective_solution);
 	free_2d_array(empty_cells, empty_num);
-
 	return 1;
 }
 

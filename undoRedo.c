@@ -4,11 +4,11 @@
 /* copy changes to gptr->user, according to undo or redo
  * in undo, copy values from current old values
  * in redo, copy values from new */
-void copy_changes(game *gptr, node *changeNode, int undo) {
+int copy_changes(game *gptr, node *changeNode, int undo) {
 	int ind, change_i, change_j;
 
 	if (changeNode->changesLen == 0) {
-		return;
+		return 0;
 	}
 
 	for (ind = 0; ind < changeNode->changesLen; ind++) {
@@ -20,6 +20,8 @@ void copy_changes(game *gptr, node *changeNode, int undo) {
 			gptr->user[change_i][change_j] = changeNode->changes[ind][3];
 		}
 	}
+
+	return 1;
 }
 
 /* return number of changes made from previous move*/
@@ -182,32 +184,39 @@ void append(node **current, int **changes, int *flags, int isFirst,
 	*current = newNode;
 }
 
-void undo_aux(game *gptr, node **current, int *flags, int print_bool) {
+int undo_aux(game *gptr, node **current, int *flags, int print_bool) {
+	int changes_exist;
+
 	if ((*current)->prev == NULL) {
 		printf("Error, original board, no move to undo\n");
-		return;
+		return 0;
 	}
 
 	copy_1d_array(((*current)->prev)->flagArray, flags, NUM_FLAGS);
-	copy_changes(gptr, *current, 1);
+	changes_exist = copy_changes(gptr, *current, 1);
 
 	if (print_bool) {
 		print_changes((*current)->changes, (*current)->changesLen, 1);
 	}
 
 	*current = (*current)->prev;
+	return changes_exist;
 }
 
-void redo_aux(game *gptr, node **current, int *flags) {
+int redo_aux(game *gptr, node **current, int *flags) {
+	int changes_exist;
+
 	if ((*current)->next == NULL) {
 		printf("Error, no move to redo\n");
-		return;
+		return 0;
 	}
 
 	*current = (*current)->next;
 	copy_1d_array((*current)->flagArray, flags, NUM_FLAGS);
-	copy_changes(gptr, *current, 0);
+	changes_exist = copy_changes(gptr, *current, 0);
 	print_changes((*current)->changes, (*current)->changesLen, 0);
+
+	return changes_exist;
 }
 
 /* allocate new nodeBoard from recently changed board

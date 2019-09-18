@@ -532,18 +532,28 @@ void generate(game *gptr, int *flags, char **strings, node **currentMove,
 
 /* Goes back one step in list, if exists */
 void undo(game *gptr, node **currentMove, int *flags) {
-	undo_aux(gptr, currentMove, flags, 1);
-	update_board_errors(gptr);
-	print_board(gptr, flags);
+	int move_change;
+
+	move_change = undo_aux(gptr, currentMove, flags, 1);
+
+	if (move_change) {
+		update_board_errors(gptr);
+		print_board(gptr, flags);
+	}
 }
 
 /*------------Redo-----------------*/
 
 /* Goes forward one step in list, if exists */
 void redo(game *gptr, node **currentMove, int *flags) {
-	redo_aux(gptr, currentMove, flags);
-	update_board_errors(gptr);
-	print_board(gptr, flags);
+	int move_change;
+
+	move_change = redo_aux(gptr, currentMove, flags);
+
+	if (move_change) {
+		update_board_errors(gptr);
+		print_board(gptr, flags);
+	}
 }
 
 /*-------------Save---------------*/

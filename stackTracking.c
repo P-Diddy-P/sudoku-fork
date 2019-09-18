@@ -101,12 +101,14 @@ void print_top(stack *stkptr) {
 int stack_tracking(game *gptr) {
 	int possibleSolutions = 0;
 	int currentRow = 0, currentCol = 0;
+	int errors_in_board;
 	int *stkres;
 	stack stk;
 	stack *stkptr = &stk;
 
-	if (find_next_empty_cell(gptr, &currentRow, &currentCol)) {
-		if (board_has_errors(gptr)) {
+	errors_in_board = board_has_errors(gptr);
+	if (find_next_empty_cell(gptr, &currentRow, &currentCol) || errors_in_board) {
+		if (errors_in_board) {
 			return 0;
 		} else {
 			return 1;
