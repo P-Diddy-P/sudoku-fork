@@ -393,14 +393,15 @@ void validate(game *gptr, GRBenv *env) {
 /* Parse argument to float */
 double get_float_from_str(int *flags, char **strings, int arg) {
 	double get_float;
+	char *end_address;
 
 	/* check if string is zero */
 	if (load_is_str_zero(strings[arg])) {
 		return 0;
 	}
 
-	get_float = strtod(strings[arg], NULL);
-	if (get_float) {
+	get_float = strtod(strings[arg], &end_address);
+	if (end_address != NULL) {
 		return get_float;
 	}
 
