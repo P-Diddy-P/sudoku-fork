@@ -180,35 +180,24 @@ void solve(game *gptr, int *flags, char **strings, node **currentMove) {
 	 * TODO - need to do? can you load an erroneous board
 	 * in solve mode?*/
 	if (is_fixed_erroneous(local_gptr)) {
-		/* if true, free locally allocated game pointer and return error */
 		printf("Error, loaded board contains erroneous fixed cells\n");
 		free_game_pointer(local_gptr);
 		flags[INVALID_USER_COMMAND] = 1;
 		return;
 	}
 
-	/* if board is valid and not erroneous, free old gptr memory and copy new
-	 * data from loaded game */
 	free_game_pointer(gptr);
 	assign_game_pointer(gptr, local_gptr);
-
-	/* set mode - BEFORE creating new list -
-	 * otherwise the first node is recorded with mode flag zero */
 	flags[MODE] = MODE_SOLVE;
 
-	/* if loaded board is solved, free old_board and return */
 	if (is_game_over(gptr, flags)) {
 		return;
 	}
 
-	/* initialize new empty undoRedo list with new board */
-	init_new_undoRedo(gptr, currentMove, flags);
 
+	init_new_undoRedo(gptr, currentMove, flags);
 	printf("Loaded board in Solve mode\n");
 	print_board(gptr, flags);
-
-	/* check if board is solved functionality*/
-	is_game_over(gptr, flags);
 }
 
 /*--------------Edit---------------*/
@@ -350,19 +339,14 @@ int set_check(int *col, int *row, int *val, game *gptr, int *flags,
 
 /* Set a value in board, check if solved */
 void set(game *gptr, int *flags, char **strings, node **currentMove) {
-
-	/* init ints to get, pass pointers to parsing and range check
-	 * declare copy to be used */
 	int col, row, val;
 	int **old_board;
 
-	/* if error in set values or range, return on error */
 	if (!set_check(&col, &row, &val, gptr, flags, strings)) {
 		flags[INVALID_USER_COMMAND] = 1;
 		return;
 	}
 
-	/* if fixed in solve mode, return on error*/
 	if ((gptr->flag[row - 1][col - 1] == FIXED)
 			&& (flags[MODE] == MODE_SOLVE)) {
 		printf("Cannot update a fixed cell in solve mode\n");
@@ -371,28 +355,19 @@ void set(game *gptr, int *flags, char **strings, node **currentMove) {
 
 	}
 
-	/* copy values to old_board */
 	old_board = init_2d_array(gptr->sideLength);
 	copy_2d_array(old_board, gptr->user, gptr->sideLength);
-
-	/* set value at X=col, Y=row, if not fixed or in edit mode*/
 	gptr->user[row - 1][col - 1] = val;
-
 	update_board_errors(gptr);
 
-	/* if game over, free old_board and return */
-	if (is_game_over(gptr, flags)) {
+	if (flags[MODE] == MODE_SOLVE && is_game_over(gptr, flags)) {
 		free_2d_array(old_board, gptr->sideLength);
 		return;
 	}
 
-	/* print board after operation */
 	print_board(gptr, flags);
-
-	/* commit move to list with old board */
 	commit_move(currentMove, gptr, old_board, flags, 0);
 	free_2d_array(old_board, gptr->sideLength);
-
 }
 
 /*------------Validate-----------------*/
@@ -673,30 +648,22 @@ void num_solutions(game *gptr) {
 void autofill(game *gptr, int *flags, node **currentMove) {
 	int **old_board;
 
-	/* update board errors*/
 	update_board_errors(gptr);
-
-	/* copy values to old_board */
 	old_board = init_2d_array(gptr->sideLength);
 	copy_2d_array(old_board, gptr->user, gptr->sideLength);
 
-	/* check if board is erroneous */
 	if (board_has_errors(gptr)) {
 		printf("Error, cannot run autofill on an erroneous board\n");
 		flags[INVALID_USER_COMMAND] = 1;
 		return;
 	}
 
-	/* run autocomplete on board*/
 	auto_complete(gptr);
-
-	/* if game over, free old_board and return */
 	if (is_game_over(gptr, flags)) {
 		free_2d_array(old_board, gptr->sideLength);
 		return;
 	}
 
-	/* commit move to list with old board */
 	commit_move(currentMove, gptr, old_board, flags, 0);
 	free_2d_array(old_board, gptr->sideLength);
 }
