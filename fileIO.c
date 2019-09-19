@@ -405,6 +405,9 @@ void load_board(game *local_gptr, int *flags, char **strings) {
 	/* try to find file using path from user*/
 	fp = fopen(strings[PATH], "r");
 
+	free(strings[PATH]);
+	strings[PATH] = NULL;
+
 	/* check if file opened correctly, return on error if not */
 	if (!load_open_file(flags)) {
 		return;
@@ -450,7 +453,7 @@ char* save_get_str(int num) {
 	num_dig = log_res + 1;
 
 	/* allocate chars to string*/
-	num_str = calloc(num_dig, sizeof(char));
+	num_str = calloc(num_dig + 1, sizeof(char));
 
 	if (errno) {
 		printf("Error during game memory allocation.\n");
@@ -543,6 +546,9 @@ void save_board(game *gptr, int *flags, char **strings) {
 
 	/* try to open file in write mode */
 	fp = fopen(strings[PATH], "w");
+
+	free(strings[PATH]);
+	strings[PATH] = NULL;
 
 	/* if failed, return on error */
 	if (fp == NULL) {

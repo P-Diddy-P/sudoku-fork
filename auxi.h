@@ -41,7 +41,7 @@
 	# define MODE_EDIT 1
 	# define MODE_SOLVE 2
 
-# define IS_SOLVED 1 /*bin*/
+# define IS_SOLVED 1 /*bin  TODO REMOVE*/
 
 # define EOF_EXIT 2 /*bin*/
 
@@ -91,8 +91,7 @@
 
 # define NULLIFY_START 3
 # define NULLIFY_END 8
-# define STR_FREE_START	1
-# define STR_FREE_END	4
+
 
 
 

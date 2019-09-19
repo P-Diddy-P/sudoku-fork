@@ -84,11 +84,16 @@ int get_int_from_str(int *flags, char **strings, int arg) {
 
 	/* check if string is zero */
 	if (load_is_str_zero(strings[arg])) {
+		free(strings[arg]);
+		strings[arg] = NULL;
 		return 0;
 	}
 
 	/* try to convert to int with atoi */
 	get_int = atoi(strings[arg]);
+
+	free(strings[arg]);
+	strings[arg] = NULL;
 
 	/* if non zero, conversions successful, return int*/
 	if (get_int) {
@@ -397,10 +402,16 @@ double get_float_from_str(int *flags, char **strings, int arg) {
 
 	/* check if string is zero */
 	if (load_is_str_zero(strings[arg])) {
+		free(strings[arg]);
+		strings[arg] = NULL;
 		return 0;
 	}
 
 	get_float = strtod(strings[arg], &end_address);
+
+	free(strings[arg]);
+	strings[arg]=NULL;
+
 	if (end_address != NULL) {
 		return get_float;
 	}
@@ -597,6 +608,7 @@ void hint(game *gptr, int *flags, char **strings, GRBenv *env) {
 	int **local_board;
 	int row, col, success;
 
+
 	col = get_int_from_str(flags, strings, ARG1);
 	row = get_int_from_str(flags, strings, ARG2);
 
@@ -610,24 +622,20 @@ void hint(game *gptr, int *flags, char **strings, GRBenv *env) {
 		flags[INVALID_USER_COMMAND] = 1;
 		return;
 	}
-
 	update_board_errors(gptr);
 
 	if (board_has_errors(gptr)) {
 		printf("Error, board is erroneous, cannot give hint\n");
 		return;
 	}
-
-	if (gptr->flag[row][col] == FIXED) {
+	if (gptr->flag[row-1][col-1] == FIXED) {
 		printf("Error, cell is fixed, cannot give hint\n");
 		return;
 	}
-
-	if (gptr->user[row][col] != 0) {
+	if (gptr->user[row-1][col-1] != 0) {
 		printf("Error, cell is not zero, cannot give hint\n");
 		return;
 	}
-
 	local_board = init_2d_array(gptr->sideLength);
 	success = gurobi_ilp(local_board, gptr, env);
 
@@ -713,16 +721,13 @@ void reset(game *gptr, int *flags, node **currentMove) {
 	print_board(gptr, flags);
 }
 
-void Exit(game *gptr, node **currentMove, char **strings, GRBenv *env) {
-	int k;
+void Exit(game *gptr, node **currentMove, GRBenv *env) {
 
 	printf("Exiting game...\n");
 	terminate_all(*currentMove);
 	free_game_pointer(gptr);
 	GRBfreeenv(env);
-	for (k = STR_FREE_START; k <= STR_FREE_END; k++) {
-		free(strings[k]);
-	}
+
 }
 
 /*------------Function pointer array-----------------*/
@@ -740,18 +745,16 @@ void Exit(game *gptr, node **currentMove, char **strings, GRBenv *env) {
 /* public function using the function array  */
 void user_op(game *gptr, int *flags, char **strings, node **currentMove,
 		GRBenv *env) {
-
 	if (flags[BLANK_ROW] || flags[INVALID_USER_COMMAND]) {
 
 		/* added - in case EOF is after blank or invalid command */
 		if (flags[EOF_EXIT]) {
 
-			Exit(gptr, currentMove, strings, env);
+			Exit(gptr, currentMove, env);
 		}
 
 		return;
 	}
-
 	switch (flags[USER_COMMAND]) {
 	case 1:
 		solve(gptr, flags, strings, currentMove);
@@ -802,7 +805,7 @@ void user_op(game *gptr, int *flags, char **strings, node **currentMove,
 		reset(gptr, flags, currentMove);
 		break;
 	case 17:
-		Exit(gptr, currentMove, strings, env);
+		Exit(gptr, currentMove, env);
 		break;
 	}
 

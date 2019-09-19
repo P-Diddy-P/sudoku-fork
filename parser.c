@@ -47,12 +47,11 @@ char* parse_get_line(int* flags, char* line) {
 		flags[EOF_EXIT] = 1;
 
 		/* last line contains EOF only - line is NULL, return NULL */
-		if (null_line_chk==NULL){
+		if (null_line_chk == NULL) {
 			return NULL;
 		}
 
 	}
-
 
 	for (k = 0; k < BUFF_SIZE; k++) {
 		if ((line[k] == 10) || (line[k] == 0)) {
@@ -67,13 +66,11 @@ char* parse_get_line(int* flags, char* line) {
 
 		while (((c = fgetc(stdin)) != 10) || ((c = fgetc(stdin)) != EOF)) {
 			/*advance stdin pointer until newline or EOF */
-
 		}
 
 		if (feof(stdin)) {
 			flags[EOF_EXIT] = 1;
 		}
-		/* TODO currently sets INVALID_LINE_LENGTH even if EOF encountered. is this OK? */
 		flags[INVALID_LINE_LENGTH] = 1;
 		return 0;
 	}
@@ -187,14 +184,10 @@ void parse_command_path(int* flags, char* token, char *strings[],
 	path = calloc(258, sizeof(char));
 	memory_alloc_error();
 
-	for (k = 0; k < 600; k++) {
+	for (k = 0; k < 258; k++) {
+		path[k] = token[k];
 		if (token[k] == 0) {
 			break;
-		}
-		if (token[k] == 92) { /* switch backward slash with forward*/
-			path[k] = 47;
-		} else {
-			path[k] = token[k];
 		}
 	}
 
@@ -226,14 +219,14 @@ void parse_command_args(int* flags, char *strings[], char* token, int num_args) 
 			return;
 		}
 
-		/* If token not NULL, dynamically allocate space for string in strings array
-		 * TODO need to free after each user prompt the strings array*/
-		str = calloc(strlen(token), sizeof(char));
+
+		str = calloc(strlen(token)+1, sizeof(char));
 		memory_alloc_error();
 
 		strcpy(str, token);
 
 		strings[k] = str; /* store arguments in ARG1 (1), ARG2(2), ARG3(3)*/
+
 	}
 
 	token = strtok(NULL, DELIM);
@@ -266,13 +259,12 @@ void parse_line(char *line, int *flags, char* strings[]) {
 	char* token;
 
 	/* last line is EOF  */
-	if (line==NULL){
-		flags[USER_COMMAND]=EXIT;
+	if (line == NULL) {
+		flags[USER_COMMAND] = EXIT;
 		return;
 	}
 
 	token = strtok(line, DELIM);
-
 
 	if (token == NULL || is_token_ws(token)) { /* case blank row, only whitespace or tabs*/
 		flags[BLANK_ROW] = 1;
@@ -305,7 +297,7 @@ void parse_line(char *line, int *flags, char* strings[]) {
 	else if ((strcmp(token, PRINT_BOARD_STR)) == 0) {
 		if (flags[MODE] == MODE_INIT) {
 			parse_print_command_modes_error(3, PRINT_BOARD_STR, SOLVE_STR,
-					EDIT_STR);
+			EDIT_STR);
 			flags[INVALID_USER_COMMAND] = 1;
 		} else {
 			flags[USER_COMMAND] = PRINT_BOARD;
@@ -328,7 +320,7 @@ void parse_line(char *line, int *flags, char* strings[]) {
 	else if ((strcmp(token, VALIDATE_STR)) == 0) {
 		if (flags[MODE] == MODE_INIT) {
 			parse_print_command_modes_error(3, VALIDATE_STR, SOLVE_STR,
-					EDIT_STR);
+			EDIT_STR);
 			flags[INVALID_USER_COMMAND] = 1;
 		} else {
 			flags[USER_COMMAND] = VALIDATE;
@@ -460,8 +452,7 @@ void parse_line(char *line, int *flags, char* strings[]) {
 	else { /* first token invalid - no such command exists*/
 		printf("Invalid command\n");
 		flags[INVALID_USER_COMMAND] = 1;
-		/*TODO - invalid user command, try again
-		 * general for blank row and all syntactically invalid commands? */
+
 	}
 
 }
