@@ -79,9 +79,7 @@ char* load_get_next_token(int *flags, FILE *fp) {
 	c = fgetc(fp);
 
 	/* while not EOF or whitespace, keep reading chars and reallocating
-	 * memory for next char in stream.
-	 * TODO - possible optimization, reallocating in a
-	 * more efficient way (doubling)*/
+	 * memory for next char in stream. */
 	while (!feof(fp)) {
 		loc_str[cursize - 1] = c;
 		cursize++;
@@ -334,7 +332,6 @@ int load_get_dimensions(FILE *fp, game *local_gptr, int *flags) {
  * file after the lest int was read*/
 int load_is_file_over(FILE *fp, int *flags) {
 
-	/* advnace whitespaces */
 	load_advance_whitespace(fp);
 
 	/* if there isn't an EOF after the whitespaces,
@@ -455,10 +452,7 @@ char* save_get_str(int num) {
 	/* allocate chars to string*/
 	num_str = calloc(num_dig + 1, sizeof(char));
 
-	if (errno) {
-		printf("Error during game memory allocation.\n");
-		exit(errno);
-	}
+	memory_alloc_error();
 
 	/* write chars of number to string */
 	sprintf(num_str, "%d", num);
@@ -482,6 +476,9 @@ void save_write_dims(FILE *fp, game *gptr) {
 	fprintf(fp, "%s", n_str);
 	fputc(32, fp);
 	fputc(10, fp);
+
+	free(m_str);
+	free(n_str);
 
 }
 
@@ -518,6 +515,8 @@ void save_write_num(FILE *fp, game *gptr, int *flags, int i, int j) {
 	/*  write a whitespace, even after last number in row
 	 * (that's the behavior of the provided executable) */
 	fputc(32, fp);
+
+	free(to_write);
 
 }
 
