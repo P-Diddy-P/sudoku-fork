@@ -90,10 +90,13 @@ int pick_random_value(int *value, double *prob, int length) {
         if (rand_num >= intervals[i][0] && rand_num < intervals[i][1]) {
             store_index = value[i]; /* store index is used to return the correct index
                                            * safely after deallocating valid_index */
+
             free_2d_double_array(intervals, length);
             return store_index;
         }
     }
+
+    return -1;
 }
 
 int fill_cell(game *gptr, double *value_prob, int row, int col, double threshold) {
@@ -141,7 +144,6 @@ int guess_hint_aux(game *gptr, int row, int col, GRBenv *env) {
         free_2d_array(cell_map, empty_cells);
         free(solution_probs);
         return -1;
-        /* replace with some error value. Consider different return values for for different error causes */
     }
 
     hint_cell = get_coords_index(cell_map, empty_cells, row, col);
@@ -169,7 +171,7 @@ int guess_aux(game *gptr, double threshold, GRBenv *env) {
     int i, empty_cells, objective_value, filled_cells = 0;
     int **cell_map = NULL;
     double *solution_probs = NULL;
-    double **prob_matrix = NULL; /* reshape solution_probs to a sl x empty_cells matrix */
+    double **prob_matrix = NULL; /* reshape solution_probs to a (sl x empty_cells) matrix */
 
     empty_cells = enumerate_empty_cells(gptr, &cell_map);
     objective_value = gurobi_general(gptr, cell_map, &solution_probs, empty_cells, GRB_CONTINUOUS, env);

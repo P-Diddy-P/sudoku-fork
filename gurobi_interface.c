@@ -379,18 +379,36 @@ int gurobi_general(game *gptr, int **cell_map, double **objective_solution,
 			variable_upper_bound, variable_type, NULL);
 	if (error) {
 		printf("ERROR %d GRBnewmodel: %s\n", error, GRBgeterrormsg(env));
+		free(objective_coefficient);
+		free(constraint_coefficient);
+		free(variable_type);
+		free(variable_upper_bound);
+		GRBfreemodel(model);
+
 		return -1;
 	}
 
 	error = GRBsetintattr(model, GRB_INT_ATTR_MODELSENSE, GRB_MAXIMIZE);
 	if (error) {
 		printf("ERROR %d GRBsetintattr(): %s\n", error, GRBgeterrormsg(env));
+		free(objective_coefficient);
+		free(constraint_coefficient);
+		free(variable_type);
+		free(variable_upper_bound);
+		GRBfreemodel(model);
+
 		return -1;
 	}
 
 	error = GRBupdatemodel(model);
 	if (error) {
 		printf("ERROR %d GRBupdatemodel(): %s\n", error, GRBgeterrormsg(env));
+		free(objective_coefficient);
+		free(constraint_coefficient);
+		free(variable_type);
+		free(variable_upper_bound);
+		GRBfreemodel(model);
+
 		return -1;
 	}
 
@@ -405,22 +423,52 @@ int gurobi_general(game *gptr, int **cell_map, double **objective_solution,
 			empty_cells);
 	if (error) {
 		printf("Error while adding single cell value constraints.\n");
+		free(objective_coefficient);
+		free(constraint_coefficient);
+		free(variable_type);
+		free(variable_upper_bound);
+		GRBfreemodel(model);
+
 		return -1;
 	}
 
 	error = GRBoptimize(model);
 	if (error) {
 		printf("ERROR %d GRBoptimize(): %s\n", error, GRBgeterrormsg(env));
+		free(objective_coefficient);
+		free(constraint_coefficient);
+		free(variable_type);
+		free(variable_upper_bound);
+		GRBfreemodel(model);
+
 		return -1;
 	}
 
 	error = GRBgetintattr(model, GRB_INT_ATTR_STATUS, &optimstatus);
 	if (error) {
 		printf("ERROR %d GRBgetintattr(): %s\n", error, GRBgeterrormsg(env));
+		free(objective_coefficient);
+		free(constraint_coefficient);
+		free(variable_type);
+		free(variable_upper_bound);
+		GRBfreemodel(model);
+
 		return -1;
 	} else if (optimstatus == GRB_INFEASIBLE) {
+		free(objective_coefficient);
+		free(constraint_coefficient);
+		free(variable_type);
+		free(variable_upper_bound);
+		GRBfreemodel(model);
+
 		return -2;
 	} else if (optimstatus == GRB_UNBOUNDED) {
+		free(objective_coefficient);
+		free(constraint_coefficient);
+		free(variable_type);
+		free(variable_upper_bound);
+		GRBfreemodel(model);
+
 		return -2;
 	}
 
@@ -428,6 +476,12 @@ int gurobi_general(game *gptr, int **cell_map, double **objective_solution,
 	if (error) {
 		printf("THIS ERROR %d GRBgetdblattr(): %s\n", error,
 				GRBgeterrormsg(env));
+		free(objective_coefficient);
+		free(constraint_coefficient);
+		free(variable_type);
+		free(variable_upper_bound);
+		GRBfreemodel(model);
+
 		return -1;
 	}
 
@@ -439,6 +493,12 @@ int gurobi_general(game *gptr, int **cell_map, double **objective_solution,
 	if (error) {
 		printf("ERROR %d GRBgetdblattrarray(): %s\n", error,
 				GRBgeterrormsg(env));
+		free(objective_coefficient);
+		free(constraint_coefficient);
+		free(variable_type);
+		free(variable_upper_bound);
+		GRBfreemodel(model);
+
 		return -1;
 	}
 
