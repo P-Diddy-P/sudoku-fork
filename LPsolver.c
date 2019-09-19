@@ -180,9 +180,9 @@ int guess_aux(game *gptr, double threshold, GRBenv *env) {
         if (objective_value == -1) {
             printf("There was an error in one of gurobi's functions.\n");
         } else if (objective_value == -2) {
-            printf("Linear model of board is infeasible or unbounded.\n");
+            printf("Can't find solution for board.\n");
         } else {
-            printf("Unknown error occured, invalid objective value.\n");
+            printf("Unknown error occured during guess.\n");
         }
 
         free_2d_array(cell_map, empty_cells);
