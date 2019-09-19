@@ -94,15 +94,8 @@ void print_changes(int **changes, int changes_num, int undo) {
  * and the node itself. assumes node allocated,
  * TODO - what error should be returned? */
 void free_node(node *delNode) {
-
-	if (!delNode) {
-		printf("ERROR, DELNODE IS NULL! EXITING...\n");
-		exit(0);
-	}
-	/* free flag array and nodeBoard */
 	free(delNode->flagArray);
 	free_2d_array(delNode->changes, delNode->changesLen);
-	/* free node */
 	free(delNode);
 }
 
