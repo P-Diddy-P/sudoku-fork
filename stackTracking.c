@@ -1,9 +1,6 @@
 #include "stackTracking.h"
 
-/********************************************************/
-/*     TODO 	  STACK ADT FUNCTIONS     TODO      	*/
-/********************************************************/
-
+/* initializes an empty stack */
 void stack_init(stack *stkptr) {
 	stkptr->totalSize = STACK_INIT_SIZE;
 	stkptr->usedSize = 0;
@@ -12,6 +9,7 @@ void stack_init(stack *stkptr) {
 
 }
 
+/* Reduces the size of a stack by STACK_ENLARGE_RATE */
 void stack_diminish(stack *stkptr) {
 	/* printf("    reducing stack size by %d\n", STACK_ENLARGE_RATE); */
 
@@ -21,6 +19,7 @@ void stack_diminish(stack *stkptr) {
 	memory_alloc_error();
 }
 
+/* Increases the size of a stack by STACK_ENLARGE_RATE */
 void stack_enlarge(stack *stkptr) {
 	/* printf("    increasing stack size by %d\n", STACK_ENLARGE_RATE); */
 
@@ -30,6 +29,7 @@ void stack_enlarge(stack *stkptr) {
 	memory_alloc_error();
 }
 
+/* Push a triplet to the stack */
 void stack_push(stack *stkptr, int row, int col, int value) {
 	int *newMember = malloc(3 * sizeof(int));
 	memory_alloc_error();
@@ -45,6 +45,8 @@ void stack_push(stack *stkptr, int row, int col, int value) {
 	stkptr->stackArray[stkptr->usedSize - 1] = newMember;
 }
 
+/* Copies value from top of the stack to desptr, if stack is
+ * empty, fills dstptr with -1 */
 void stack_peek(stack *stkptr, int *dstptr) {
 	int i;
 
@@ -59,6 +61,8 @@ void stack_peek(stack *stkptr, int *dstptr) {
 	}
 }
 
+/* Copies value from the stack to dstptr and removes it from the stack,
+ * if any value exists */
 void stack_pop(stack *stkptr, int *dstptr) {
 	stack_peek(stkptr, dstptr);
 	if ((stkptr->usedSize <= stkptr->totalSize * STACK_DEC_THRESHOLD)
@@ -72,10 +76,12 @@ void stack_pop(stack *stkptr, int *dstptr) {
 	}
 }
 
+/* Returns whether the stack is empty or not */
 int stack_empty(stack *stkptr) {
 	return (stkptr->usedSize < 1);
 }
 
+/* Frees the stack and all it's entries */
 void stack_free(stack *stkptr) {
 	int i;
 
@@ -85,19 +91,7 @@ void stack_free(stack *stkptr) {
 	free(stkptr->stackArray);
 }
 
-/********************************************************/
-/*  TODO STACKTRACKING FUNCTIONS - CAN BE IMPORTED TODO */
-/********************************************************/
-
-void print_top(stack *stkptr) {
-	int *top = malloc(3 * sizeof(int));
-	memory_alloc_error();
-	stack_peek(stkptr, top);
-	printf("[%d, %d, %d] at %d / %d", top[0], top[1], top[2], stkptr->usedSize,
-			stkptr->totalSize);
-	free(top);
-}
-
+/* Runs exhaustive backtracking using stack recursion */
 int stack_tracking(game *gptr) {
 	int possibleSolutions = 0;
 	int currentRow = 0, currentCol = 0;

@@ -22,9 +22,7 @@ char* parse_get_line(int* flags, char* line) {
 	char c;
 	char *null_line_chk;
 
-	/* if EOF encountered BEFORE reading the line,
-	 * it must be that the line is blank, in the end of file.
-	 * flag EOF_EXIT and return */
+
 	if (feof(stdin)) {
 		flags[EOF_EXIT] = 1;
 		return 0;
@@ -76,7 +74,7 @@ char* parse_get_line(int* flags, char* line) {
 	}
 }
 
-/* print the appropriate syntax*/
+/* print the appropriate syntax, if user input is wrong */
 void parse_print_command_correct_args(int* flags) {
 	printf("Correct syntax is: ");
 	if (flags[USER_COMMAND] == SOLVE) {
@@ -113,10 +111,8 @@ void parse_print_command_modes_error(int num_args, ...) {
 	char **to_print = to_print = calloc(num_args, sizeof(char*));
 	memory_alloc_error();
 
-	/* init variable length argument list */
 	va_start(list, num_args);
 
-	/* allocate string array and copy strings */
 	for (k = 0; k < num_args; k++) {
 		to_print[k] = calloc(50, sizeof(char));
 		memory_alloc_error();
@@ -124,19 +120,16 @@ void parse_print_command_modes_error(int num_args, ...) {
 	}
 	va_end(list);
 
-	/* print error */
 	printf("Command %s not available in current mode"
 			", is available in %s %s%s%s only\n", to_print[0], to_print[1],
 			((num_args > 2) ? "and " : ""), ((num_args > 2) ? to_print[2] : ""),
 			((num_args > 2) ? " modes" : "mode"));
 
-	/* free memory allocated */
 	for (k = 0; k < num_args; k++) {
 		free(to_print[k]);
 	}
 
 	free(to_print);
-
 }
 
 /* return true if token consists only of whitespace characters */
@@ -166,7 +159,7 @@ void parse_command_path(int* flags, char* token, char *strings[],
 	char *path;
 	int k = 0;
 
-	token = strtok(NULL, "\r\n"); /* path could be token that ends in newline, not in tabs or ws */
+	token = strtok(NULL, "\r\n");
 
 	if ((token == NULL) || is_token_ws(token)) {
 		if (is_optional) {

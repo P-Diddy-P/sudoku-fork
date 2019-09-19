@@ -8,6 +8,8 @@
 # include "gurobi_interface.h"
 # include "gameStruct.h"
 
+/* Returns the index of [row,col] cell in map array, returns -1
+ * if [row,col] does not exist */
 int get_coords_index(int **map, int mapLength, int row, int col) {
 	int i;
 
@@ -19,6 +21,7 @@ int get_coords_index(int **map, int mapLength, int row, int col) {
 	return -1;
 }
 
+/* Creates an indexed map of empty cells in current board */
 int enumerate_empty_cells(game *gptr, int ***empty_cells) {
 	int i, j, k, empty_num = 0;
 
@@ -54,6 +57,8 @@ int enumerate_empty_cells(game *gptr, int ***empty_cells) {
 	}
 }
 
+/* The next 5 functions adding the constraints
+ * required to solve the linear model */
 int add_single_value_constraints(GRBmodel *model,
 game *gptr, double *constraint_coefficient, int empty_cells) {
 	int k, i, error, constraint_vars;
@@ -285,6 +290,8 @@ int add_constraints(GRBmodel *model, int **cell_map, game *gptr,
 	return 0;
 }
 
+/* For LPsolver, returns the objective coefficient for the [row,col,value] variable
+ * according to contending cells who can have the same value */
 double get_objective_coefficient(game *gptr, int row, int col, int value) {
 	int i, j, contender_cells = 0;
 	int start_row = row - row % gptr->rows, start_col = col - col % gptr->cols;
@@ -323,11 +330,8 @@ double get_objective_coefficient(game *gptr, int row, int col, int value) {
 
 }
 
-/* Currently there are 3 options to setting objective coefficients:
- 1. For each value in each empty cell count the number of other incident cells which can receive the same value, divide it by the
- number of such cells (or 2 to the power of the number of such cells).
- 2. For each value in each empty cell order this cekk and all other incident cells according to their prob to have the said
- value. */
+/* Iteratively sets the coefficients for the variables in the
+ * Linear model used by guess */
 void set_objective_function(game *gptr, int **cell_map,
 		double *objective_coefficient, int empty_cells) {
 	int i, k, row, col;
@@ -345,6 +349,9 @@ void set_objective_function(game *gptr, int **cell_map,
 	}
 }
 
+/* General function to interact with Gurobi, both by LPsolver and ILPsolver.
+ * Creates a linear model, solves it and returns the solution through the objective
+ * solution double array.*/
 int gurobi_general(game *gptr, int **cell_map, double **objective_solution,
 		int empty_cells, char GRB_type, GRBenv *env) {
 	GRBmodel *model = NULL;

@@ -13,9 +13,8 @@
 #include <errno.h>
 
 /* Module purpose:
- * 	include s error functions to be used by all modules.
- * 	since all modules directly or indirectly include this module,
- * 	it serves a kolboinik module for all standard libraries includes */
+ * 	includes error function to be used by all modules.
+ */
 
 void memory_alloc_error();
 

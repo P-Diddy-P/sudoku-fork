@@ -5,17 +5,6 @@
  *      Author: itait
  *
  *
- *Module purpose:
- *	 Includes all operations defined in the game.
- *	 The public function user_op receives the game pointer, flags and strings
- *	 and operates upon the current board or prints to user the appropriate error message.
- *	 The module is implemented by implementing the various operations as functions and
- *	 helper functions, using the file i/o module and solver module.
- *	 The general functions of operations are then stored in array of
- *	 function pointers, and the public function user_op is using that
- *	 array to call the appropriate operation from the array on the board.
- *
- *	 No need to check if mode is valid, being checked in parse module
  */
 
 # include "userOp.h"
@@ -39,31 +28,24 @@
  * "copy_board" function */
 int is_fixed_erroneous(game *gptr) {
 
-	/* initialize local board */
 	game local_copy;
 	game *local_copy_gptr;
 	local_copy_gptr = &local_copy;
 
 	init_board(local_copy_gptr, gptr->rows, gptr->cols);
-
-	/* copy to local copy only fixed values */
 	copy_board(gptr, local_copy_gptr->user, 0, 1);
-
-	/* check for errors on local board */
 	update_board_errors(local_copy_gptr);
 
-	/* if there's a fixed and erroneous cell, return true*/
 	if (board_has_errors(local_copy_gptr)) {
 		free_game_pointer(local_copy_gptr);
 		return 1;
 	}
 
-	/* return false otherwise */
 	free_game_pointer(local_copy_gptr);
 	return 0;
 }
 
-/* Helper function to pring X, Y or Z in error messages */
+/* Helper function to print X, Y or Z in error messages */
 char* print_arg_name(int arg) {
 	if (arg == 1) {
 		return "X";
@@ -110,15 +92,12 @@ void init_new_undoRedo(game *gptr, node **current, int *flags) {
 
 	/* free all nodes after and before current node */
 	terminate_all(*current);
-
-	/* set current as NULL pointer - TODO check */
 	(*current) = NULL;
 
 	/* commit move - create list with new node
 	 * currentMove now points to newly created node */
 	commit_move(current, gptr, NULL, flags, 1);
 
-	/* TODO remove safeguard at end */
 	if ((*current) == NULL) {
 		printf("ERROR, (*current) IS NULL, EXITING...\n");
 		exit(0);

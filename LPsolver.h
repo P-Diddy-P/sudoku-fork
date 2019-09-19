@@ -3,6 +3,11 @@
  *
  *  Created on: 14 Sep 2019
  *      Author: itait
+ *
+ *
+ * Module purpose:
+ * - functions using LP for speculative solutions of exisiting boards
+ * serves the operations guess and guess_hint
  */
 
 

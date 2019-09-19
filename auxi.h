@@ -3,10 +3,19 @@
  *
  *  Created on: 1 Aug 2019
  *      Author: itait
+ *
+ *
+ * Module purpose:
+ * - defintions of macros used by all modules.
+ * - since all modules directly or indirectly include this module,
+ * 	it serves a kolboinik module for all standard libraries includes
  */
 
 #ifndef AUXI_H_
 #define AUXI_H_
+
+
+
 
 # include <stdlib.h>
 # include <stdio.h>

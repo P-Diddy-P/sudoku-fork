@@ -4,23 +4,12 @@
  *  Created on: 16 Aug 2019
  *      Author: itait
  *
- *Module purpose:
- *		Includes the functions for loading a new game and saving a current game,
- *		through it's two public functions "load_board" and "save_board".
- *		DOES NOT conduct "high order" validations of board, i.e,
- *		load_board loads a valid FORMAT board, without regard to it's
- *		validity as game. Similarly, save_board assumes that the board that he writes
- *		is a valid board in regard for board validity and game mode.
  */
 
 # include "fileIO.h"
 
-/* ----------------------------------------
- * ----------------------------------------
- * ----------------------------------------
- * --------- LOAD BOARD FUNCTIONS ---------
- * ----------------------------------------
- * ----------------------------------------*/
+/* --------- LOAD BOARD FUNCTIONS ---------*/
+
 /* Check if next char in stream is whitespace */
 int load_is_next_char_space(FILE *fp) {
 	char c;
@@ -57,25 +46,17 @@ char* load_get_next_token(int *flags, FILE *fp) {
 	int cursize = 1;
 	char *loc_str = 0;
 
-	/* advance stream pointer to first non
-	 * whitespace char*/
 	load_advance_whitespace(fp);
 
-	/* if EOF reached, flag and return */
 	if (feof(fp)) {
 		flags[LOAD_IS_EOF] = 1;
 		return 0;
 	}
 
-	/* allocate initial memory for local string*/
 	loc_str = calloc(cursize, sizeof(char));
 
-	if (errno) {
-		printf("Error during game memory allocation.\n");
-		exit(errno);
-	}
+	memory_alloc_error();
 
-	/* get first char */
 	c = fgetc(fp);
 
 	/* while not EOF or whitespace, keep reading chars and reallocating
@@ -92,19 +73,14 @@ char* load_get_next_token(int *flags, FILE *fp) {
 		}
 	}
 	return loc_str;
-
 }
 
-/* Check if token read from file is a series of
- * chars with value 48 ('0').
- * TODO - is it a legal token? i.e, '003', '0000'... */
+/* Check if token read from file is a series of 48 (ascii for '0')*/
 int load_is_str_zero(char *str) {
 	int str_len, k;
 
-	/* get string length */
 	str_len = strlen(str);
 
-	/* if one of the chars is not '0', return false*/
 	for (k = 0; k < str_len; k++) {
 
 		if (str[k] != 48) {
@@ -112,11 +88,9 @@ int load_is_str_zero(char *str) {
 		}
 	}
 
-	/* return true otherwise */
 	return 1;
 }
 
-/* Check if char is a number 0-9 using ascii decimal value*/
 int is_char_num(char c) {
 	if ((c >= 48) && (c <= 57)) {
 		return 1;
@@ -130,7 +104,6 @@ int is_char_num(char c) {
 int load_string_validity(char *str, int str_len) {
 	int itr;
 
-	/* for every char, check if valid*/
 	for (itr = 0; itr < str_len; itr++) {
 		if ((itr == str_len - 1)
 				&& ((str[itr] == 46) || is_char_num(str[itr]))) {
@@ -161,7 +134,6 @@ void load_next_number(FILE *fp, game *local_gptr, int *flags, int i, int j) {
 	int get_int;
 	int dot = 0;
 
-	/* get next token from file as string */
 	get_str = load_get_next_token(flags, fp);
 
 	/* if EOF reached and not enough tokens read, return error*/
@@ -181,7 +153,6 @@ void load_next_number(FILE *fp, game *local_gptr, int *flags, int i, int j) {
 
 	str_len = strlen(get_str);
 
-	/* if string contains any invalid chars, return error */
 	if (!load_string_validity(get_str, str_len)) {
 		printf("Error, invalid token in file\n");
 		flags[LOAD_IS_INVALID_FORMAT] = 1;
@@ -189,7 +160,7 @@ void load_next_number(FILE *fp, game *local_gptr, int *flags, int i, int j) {
 		return;
 	}
 
-	/* if last char is dot, flag dot */
+	/* if last char is dot, flag dot - 46 is ascii for '.' */
 	if ((str_len > 1) && (get_str[str_len - 1] == 46)) {
 		dot = 1;
 		get_str[str_len - 1] = 0;/* append stop char in place of dot*/
@@ -200,12 +171,11 @@ void load_next_number(FILE *fp, game *local_gptr, int *flags, int i, int j) {
 	 * where there's no difference between an error and the char '0') */
 	if (load_is_str_zero(get_str)) {
 		get_int = 0;
-	}	else {
+	} else {
 		get_int = atoi(get_str);
 	}
 	free(get_str);
 
-	/* if number is invalid for board, return error*/
 	if (!load_is_number_valid_for_board(local_gptr->sideLength, get_int)) {
 		printf("Error, invalid number, must be in range 0 <= k <= %d ",
 				local_gptr->sideLength);
@@ -232,26 +202,19 @@ void load_next_number(FILE *fp, game *local_gptr, int *flags, int i, int j) {
 int load_dimensions_are_valid(char *rows_str, char *cols_str) {
 	int rows, cols;
 
-	/* if one of the dimensions is 0, return error */
 	if (load_is_str_zero(rows_str) || load_is_str_zero(cols_str)) {
 		printf("Error, dimensions must be positive integers\n");
 		return 0;
 	}
 
-	/* turn into ints */
 	rows = atoi(rows_str);
 	cols = atoi(cols_str);
 
-	/* if rows or cols is 0, atoi failed,
-	 * meaning that it tried to convert an invalid
-	 * string. return error*/
 	if (!rows || !cols) {
 		printf("Error, dimensions invalid format\n");
 		return 0;
 	}
-
 	return 1;
-
 }
 
 /* Loads first 2 tokens from file, and checks their validity in
@@ -260,7 +223,6 @@ int load_get_dimensions(FILE *fp, game *local_gptr, int *flags) {
 	char *rows_str = 0, *cols_str = 0;
 	int rows, cols;
 
-	/* advance first whitespaces */
 	load_advance_whitespace(fp);
 
 	if (feof(fp)) {
@@ -268,7 +230,6 @@ int load_get_dimensions(FILE *fp, game *local_gptr, int *flags) {
 		return 0;
 	}
 
-	/* read first token - rows*/
 	rows_str = load_get_next_token(flags, fp);
 
 	if (feof(fp)) {
@@ -276,7 +237,6 @@ int load_get_dimensions(FILE *fp, game *local_gptr, int *flags) {
 		return 0;
 	}
 
-	/* read second token - cols*/
 	cols_str = load_get_next_token(flags, fp);
 
 	if (feof(fp)) {
@@ -297,15 +257,12 @@ int load_get_dimensions(FILE *fp, game *local_gptr, int *flags) {
 		return 0;
 	}
 
-	/* tokens are valid ints, read them as ints */
 	rows = atoi(rows_str);
 	cols = atoi(cols_str);
 
-	/* free strings allocated*/
 	free(rows_str);
 	free(cols_str);
 
-	/* if the dimensions read are negative, return error*/
 	if ((rows < 0) || (cols < 0)) {
 		printf("Error, dimensions must be positive integers\n");
 		flags[LOAD_IS_INVALID_FORMAT] = 1;
@@ -313,13 +270,11 @@ int load_get_dimensions(FILE *fp, game *local_gptr, int *flags) {
 		return 0;
 	}
 
-	/* dimensions read succussfully, load them into the local game*/
 
 	local_gptr->rows = rows;
 	local_gptr->cols = cols;
 	local_gptr->sideLength = rows * cols;
 
-	/* free strings allocated*/
 
 	return 1;
 
@@ -344,11 +299,10 @@ int load_is_file_over(FILE *fp, int *flags) {
 
 }
 
-/* Iterate side length times^2 to load numbers into board*/
+/* Iterate sideLength^2 to load numbers into board*/
 int load_entries(game *local_gptr, FILE *fp, int *flags) {
 	int i = 0, j = 0;
 
-	/* Iterate and load values into board */
 	for (i = 0; i < local_gptr->sideLength; i++) {
 		for (j = 0; j < local_gptr->sideLength; j++) {
 
@@ -362,21 +316,18 @@ int load_entries(game *local_gptr, FILE *fp, int *flags) {
 		}
 	}
 
-	/* if thete are non-ws chars left in file, return error*/
 	if (!load_is_file_over(fp, flags)) {
 		return 0;
 	}
-
-	/* tokens read and loaded successfully*/
 	return 1;
 }
 
-/* Return error if file opening failed */
+/* After tring to open a file, return error if no file found
+ * and reset the errno flag to 0, so it will not cause anymore
+ * problems */
 int load_open_file(int *flags) {
-
-	/* print error if file not found*/
-	if (errno == NO_FILE) {/* NO_FILE==2 is errno code for "No such file" */
-		errno = 0; /* reset errno after failure - otherwise it will cause memory faliure */
+	if (errno == NO_FILE) {
+		errno = 0;
 		printf("Error, file not found\n");
 		flags[INVALID_USER_COMMAND] = 1;
 		return 0;
@@ -384,31 +335,19 @@ int load_open_file(int *flags) {
 	return 1;
 }
 
-/* Try to access file with path, read dimensions,
- * initialize board
- * */
+/* Try to access file with path, read dimensions, initialize board */
 void load_board(game *local_gptr, int *flags, char **strings) {
 	FILE *fp;
 
-	/*
-	 game load_game;
-	 game *load_gptr;
-
-	 load_gptr = &load_game;
-	 */
-
-	/* try to find file using path from user*/
 	fp = fopen(strings[PATH], "r");
 
 	free(strings[PATH]);
 	strings[PATH] = NULL;
 
-	/* check if file opened correctly, return on error if not */
 	if (!load_open_file(flags)) {
 		return;
 	}
 
-	/* try to read dimensions from file, return false if failed*/
 	if (!load_get_dimensions(fp, local_gptr, flags)) {
 		if (fclose(fp) == EOF) {
 			printf("Error on closing file\n");
@@ -417,10 +356,8 @@ void load_board(game *local_gptr, int *flags, char **strings) {
 		return;
 	}
 
-	/* init board with dimensions read */
 	init_board(local_gptr, local_gptr->rows, local_gptr->cols);
 
-	/* load entries */
 	if (load_entries(local_gptr, fp, flags)) {
 		if (fclose(fp) == EOF) {
 			printf("Error on closing file\n");
@@ -457,15 +394,13 @@ char* save_get_str(int num) {
 	log_res = ceil(log_res);
 	num_dig = log_res + 1;
 
-	/* allocate chars to string*/
+	/* allocate chars to string (+1 null terminator!!) */
 	num_str = calloc(num_dig + 1, sizeof(char));
 
 	memory_alloc_error();
 
-	/* write chars of number to string */
 	sprintf(num_str, "%d", num);
 
-	/* return string */
 	return num_str;
 
 }
@@ -474,11 +409,9 @@ char* save_get_str(int num) {
 void save_write_dims(FILE *fp, game *gptr) {
 	char *m_str, *n_str;
 
-	/* get strings for dimensions */
 	m_str = save_get_str(gptr->rows);
 	n_str = save_get_str(gptr->cols);
 
-	/* write "m n \n" to file*/
 	fprintf(fp, "%s", m_str);
 	fputc(32, fp);
 	fprintf(fp, "%s", n_str);
@@ -497,13 +430,10 @@ void save_write_num(FILE *fp, game *gptr, int *flags, int i, int j) {
 	int is_dot;
 	int is_not_zero;
 
-	/* mark is_not_zero flag*/
 	is_not_zero = gptr->user[i][j];
 
-	/* get string to write */
 	to_write = save_get_str(gptr->user[i][j]);
 
-	/* get write dot flag*/
 	if (flags[MODE] == MODE_EDIT) {
 		/* if in EDIT mode, save every non-zero value with dot */
 		is_dot = (gptr->user[i][j] != 0 ? 1 : 0);
@@ -512,10 +442,8 @@ void save_write_num(FILE *fp, game *gptr, int *flags, int i, int j) {
 		is_dot = (gptr->flag[i][j] == 1 ? 1 : 0);
 	}
 
-	/* write number*/
 	fprintf(fp, "%s", to_write);
 
-	/* if not zero and dot flag is up, write dot */
 	if (is_not_zero && is_dot) {
 		fputc(46, fp);
 	}
@@ -532,13 +460,11 @@ void save_write_num(FILE *fp, game *gptr, int *flags, int i, int j) {
 void save_write_lines(FILE *fp, game *gptr, int *flags) {
 	int i, j;
 
-	/* iteratively write number to file */
 	for (i = 0; i < gptr->sideLength; i++) {
 		for (j = 0; j < gptr->sideLength; j++) {
 			save_write_num(fp, gptr, flags, i, j);
 		}
-		/* write a new line char, also after last row
-		 * (that's the behavior of the provided executable) */
+
 		putc(10, fp);
 	}
 
@@ -547,30 +473,24 @@ void save_write_lines(FILE *fp, game *gptr, int *flags) {
 /* Receives a VALID board to write, in regard to current mode,
  * and writes to path, if exists*/
 void save_board(game *gptr, int *flags, char **strings) {
-
-	/* define file pointer*/
 	FILE *fp;
 
-	/* try to open file in write mode */
 	fp = fopen(strings[PATH], "w");
 
 	free(strings[PATH]);
 	strings[PATH] = NULL;
 
-	/* if failed, return on error */
 	if (fp == NULL) {
 		printf("Error, could not find path\n");
 		flags[INVALID_USER_COMMAND] = 1;
 		return;
 	}
 
-	/* write dimensions and data*/
 
 	save_write_dims(fp, gptr);
 
 	save_write_lines(fp, gptr, flags);
 
-	/* close the file*/
 	if (fclose(fp) == EOF) {
 		printf("Error on closing file\n");
 		return;

@@ -1,8 +1,5 @@
 #include "gameStruct.h"
 
-/***********************************************************************/
-/* TODO PRIVATE FUNCTIONS - SHOULD NOT BE INCLUDED IN HEADER FILE TODO */
-/***********************************************************************/
 
 /* Prints a dash character for n times then a newline character. Used to print according to format. */
 void print_dashes(int n) {
@@ -92,6 +89,7 @@ void check_column_for_errors(game *gptr, int **errorBoard, int colId) {
 		}
 	}
 }
+
 /* Indexing explained:
  * si and sj mark the first cell in the block (top left). Those remain static throughout the function.
  * ci and cj mark the current cell being compared to subsequent cells (marked with coords ri and rj),
@@ -179,13 +177,9 @@ int block_valid_value(game *gptr, int valueRow, int valueCol, int value) {
 	return 1;
 }
 
-/*******************************************************/
-/* TODO PUBLIC FUNCTIONS - INCLUDE IN HEADER FILE TODO */
-/*******************************************************/
-
 /* 2 functions for copying 1 and 2 dimensional arrays, value by value
  * assumes memory for both pointers is already allocated
- * TODO - maybe add a null pointer mechanism */
+ */
 void copy_1d_array(int *copy_to, int *copy_from, int num_elements) {
 	int i;
 
@@ -204,7 +198,9 @@ void copy_2d_array(int **copy_to, int **copy_from, int side) {
 	}
 }
 
-/* Changed function arguments of copy_board to add
+/*Copies the current user board to\from a two dimensional array. NOTE: dstBoard must be initialized
+ * to the correct size before being used in this function.
+ * Changed function arguments of copy_board to add
  * functionality. The int isFixed controls if only fixed values
  * are copied to the destination board */
 void copy_board(game *gptr, int **dstBoard, int toGame, int isFixed) {
@@ -224,7 +220,7 @@ void copy_board(game *gptr, int **dstBoard, int toGame, int isFixed) {
 	}
 }
 
-/* remove all fixed flags of a game */
+/* Remove all fixed flags of a game */
 void remove_fixed_flags(game *gptr) {
 	int i, j;
 
@@ -237,6 +233,19 @@ void remove_fixed_flags(game *gptr) {
 	}
 }
 
+/* Find the next cell with no number assigned to it (i.e. 0),
+ * starting from the
+ * given [*rowAddress][*colAddress] coordinates. The coordinates
+ *  given to the function
+ * are set to the next empty cell, mimicking call-by-reference, and
+ * the return value indicates
+ * whether the end of the board was reached (return true), or not
+ *  (return false).
+ *
+ * Note that the search is inclusive, i.e. if
+ * gptr->[*rowAddress][*colAddress] == 0, then the given addresses
+ * will not change value.
+ */
 int find_next_empty_cell(game *gptr, int *rowAddress, int *colAddress) {
 	/* make sure the initial coordinates are not overflowing */
 	if (*rowAddress > gptr->sideLength - 1
@@ -256,6 +265,9 @@ int find_next_empty_cell(game *gptr, int *rowAddress, int *colAddress) {
 	return 0;
 }
 
+/* Initialize an empty game board and returns a pointer to it
+ * NOTE - pointer passed to init_board must be already initialized.
+ * gptr pointing to null will result in undefined behavior */
 void init_board(game * gptr, int rows, int cols) {
 	/* Construct a game board with given rows and cols per block */
 	int i;
@@ -300,6 +312,7 @@ void init_board(game * gptr, int rows, int cols) {
 	}
 }
 
+/* Prints the game board, including error marks and fixed values */
 void print_board(game *gptr, int *flags) {
 	int dashLength = 4 * gptr->sideLength + gptr->rows + 1;
 	int i, j; /* iteration variables: i for current row, j for current column */
@@ -321,33 +334,14 @@ void print_board(game *gptr, int *flags) {
 	print_dashes(dashLength);
 }
 
-void print_matrix(int **mat, int sideLength) {
-	int i, j; /* iteration variables: i for current row, j for current column */
-
-	for (i = 0; i < sideLength; i++) {
-		for (j = 0; j < sideLength; j++) {
-			printf(" %d", (mat[i][j] ? mat[i][j] : 0));
-		}
-		printf("\n");
-	}
-}
-
-/* TODO debug function. remove from final product */
-void update_board(game *gptr, int len, int *rowIds, int *colIds, int *values,
-		int * flags) {
-	int addFlags = !(flags == NULL);
-	int r, c, i;
-
-	for (i = 0; i < len; i++) {
-		r = rowIds[i];
-		c = colIds[i];
-		gptr->user[r][c] = values[i];
-		if (addFlags) {
-			gptr->flag[r][c] = flags[i];
-		}
-	}
-}
-
+/* Checks the entire board for errors in row,
+ * column and block and returns 0 for no errors, 1 otherwise.
+ * Function also updates non-fixed cells to have an error flag
+ * if they have a duplicate value, and removes
+ * error flags for cells with no value or cells with no duplicate
+ * value in their row.
+ * checkForErrors replaces the board entirely with valid/error values,
+ * regardless of old validity values. */
 int update_board_errors(game *gptr) {
 	int i, j, errorsInBoard = 0;
 	int **validationBoard = malloc(gptr->sideLength * sizeof(int *));
@@ -374,6 +368,11 @@ int update_board_errors(game *gptr) {
 	return errorsInBoard;
 }
 
+/* Checks flag board for errors. Returning true if any cell in
+ *  the board has ERROR flag, false otherwise.
+ * Assumes the board is updated, i.e. every ERROR flagged cell
+ *  corresponds to a cell with a problematic value.
+ */
 int board_has_errors(game *gptr) {
 	int i, j;
 
@@ -387,6 +386,18 @@ int board_has_errors(game *gptr) {
 	return 0;
 }
 
+/*
+ * Checks if setting value is [row][col] in the board keeps
+ *  the board valid. Runs faster than checkForErrors
+ * (linear instead of quadratic), but compares all
+ *  row/column/block values to a single given value. In case
+ * row/col/block already have errors, the value is invalid.
+ *
+ * NOTE: checkValidValue compares all values in a certain
+ *  row/col/block to a POSSIBLE value, which is not necessarily
+ * on the board. The value in gptr->user[row][col] is removed for
+ *  the duration of the function, then returned.
+ */
 int check_valid_value(game *gptr, int row, int col, int value) {
 	int rowValid, colValid, blockValid, tmp = gptr->user[row][col];
 	gptr->user[row][col] = 0;
@@ -426,7 +437,7 @@ int** init_2d_array(int sideLength) {
 	return mat;
 }
 
-/* free a 2D array of ints */
+/* Functions for allocation and freeing memory of a 2D array of ints*/
 void free_2d_array(int **mat, int length) {
 	int i;
 
@@ -440,6 +451,7 @@ void free_2d_array(int **mat, int length) {
 	free(mat);
 }
 
+/* Freeing the dynamically allocated space for a game instance*/
 void free_game_pointer(game *gptr) {
 
 	/* if gptr is NULL, return without freeing */
@@ -470,6 +482,8 @@ void assign_game_pointer(game *gptr, game *assign) {
 	copy_2d_array(gptr->user, assign->user, assign->sideLength);
 }
 
+/* Iterates over board and returns true unless a zero valued
+ * cell found*/
 int is_board_full(game *gptr) {
 	int i, j;
 
@@ -487,6 +501,7 @@ int is_board_full(game *gptr) {
 
 }
 
+/* Returns the number of empty cells in board */
 int count_empty(int **board, int sideLength){
 	int i,j, counter=0;
 

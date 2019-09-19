@@ -7,6 +7,7 @@
 
 # include "LPsolver.h"
 
+/* Frees a matrix of doubles. Used only to free prob_matrix in guess*/
 void free_2d_double_array(double **map, int length) {
 	int i;
 
@@ -16,6 +17,7 @@ void free_2d_double_array(double **map, int length) {
 	free(map);
 }
 
+/* Expanding a 1d array to 2d array */
 void reshape_solution(double *old_solution, double **new_solution, int num_rows,
 		int row_length) {
 	int i, j;
@@ -27,8 +29,9 @@ void reshape_solution(double *old_solution, double **new_solution, int num_rows,
 	}
 }
 
-/* reduces the prob of each cell value to 0 if it is not over the threshold or the value is
- * invalid for the cell [row, col]. */
+/* Remaps the valid values for a cell with probability over threshold
+ * and normalizes the probabilities so that they sum to 1.
+ * If all valid cells have Probability zero, alerts fill_cell */
 int condanse_valids(game *gptr, int row, int col, double *original_prob,
 		int **dest_index, double **dest_prob, double threshold,
 		int *zero_sum_flag) {
@@ -70,6 +73,9 @@ int condanse_valids(game *gptr, int row, int col, double *original_prob,
 	return num_valids;
 }
 
+/* Pick a random value from options, according to probability.
+ * Builds an interval segmentation according to each value's
+ * probability. */
 int pick_random_value(int *value, double *prob, int length) {
 	int i, store_index;
 	double rand_num, bound = 0.0;
@@ -101,6 +107,7 @@ int pick_random_value(int *value, double *prob, int length) {
 	return -1;
 }
 
+/* Fill a cell with a random value */
 int fill_cell(game *gptr, double *value_prob, int row, int col,
 		double threshold) {
 	int *valid_value, zero_prob = 0;
@@ -129,6 +136,7 @@ int fill_cell(game *gptr, double *value_prob, int row, int col,
 /******************************************************************************/
 /******************************************************************************/
 
+/* Implements guess_hint operation. */
 int guess_hint_aux(game *gptr, int row, int col, GRBenv *env) {
 	int i, empty_cells, objective_value, hint_cell;
 	int **cell_map = NULL;
@@ -168,6 +176,7 @@ int guess_hint_aux(game *gptr, int row, int col, GRBenv *env) {
 	return 0;
 }
 
+/* Implements guess operation. */
 int guess_aux(game *gptr, double threshold, GRBenv *env) {
 	int i, empty_cells, objective_value, filled_cells = 0;
 	int **cell_map = NULL;

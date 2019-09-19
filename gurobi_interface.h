@@ -3,6 +3,12 @@
  *
  *  Created on: 14 Sep 2019
  *      Author: itait
+ *
+ *
+ *
+ * Module Purpose:
+ * - Contains all functions interacting with Gurobi in any way,
+ * except for setting up the environment in main.c
  */
 
 #ifndef GUROBI_INTERFACE_H_

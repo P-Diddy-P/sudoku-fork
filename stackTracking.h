@@ -1,9 +1,13 @@
 
+/* Module Purpose:
+ * Implements the recursive backtracking algorithm using stack implementation.
+ * The stack implementation is also used in autocomplete module.
+ * */
+
 #ifndef STACKTRACKING_H_
 #define STACKTRACKING_H_
 
-#include <stdio.h>
-#include <stdlib.h>
+
 #include "gameStruct.h"
 
 #define				STACK_INIT_SIZE		40
@@ -18,13 +22,17 @@ typedef struct stack {
 	int **stackArray;
 }stack;
 
-/* Partial implementation of stack revealed to different modules in order to easily
- * buffer possible values in autocomplete module */
+
 void stack_init(stack *stkptr);
+
 void stack_push(stack *stkptr, int row, int col, int value);
+
 void stack_pop(stack *stkptr, int *dstptr);
+
 void stack_peek(stack *stkptr, int *dstptr);
+
 void stack_free(stack *stkptr);
+
 int stack_tracking(game *gptr);
 
 #endif /* STACKTRACKING_H_ */

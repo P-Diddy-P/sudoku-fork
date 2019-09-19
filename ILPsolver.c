@@ -7,23 +7,18 @@
 
 #include "ILPsolver.h"
 
-/* Receives indices [i,j] and a board, and returns an array with all valid
- * values for [i,j] */
-
 /* returns an array with all valid values for cell [i,j] */
 void enumerate_valid_values_for_cell(int* valid_vals_array, int i, int j,
 		game *gptr, int *num_vals) {
 	int value;
 	int num = 0;
 
-	/* if value valid for cell, add to array */
 	for (value = 1; value <= gptr->sideLength; value++) {
 		if (check_valid_value(gptr, i, j, value)) {
 			valid_vals_array[num] = value;
 			num++;
 		}
 	}
-
 	*num_vals = num;
 }
 
@@ -41,13 +36,6 @@ void swap_cell_values(int *a, int *b) {
 	a[1] = tj;
 }
 
-/* swapping 2 ints in an int array */
-void swap_numbers(int *a, int *b) {
-	int temp;
-	temp = *b;
-	*b = *a;
-	*a = temp;
-}
 
 /* Randomizing the array of empty cells for every iteration
  * Implemented using the Fisher-Yates algorithm (objects in hat),
@@ -65,7 +53,7 @@ void randomize_cell_array(int** array, int length) {
 
 
 /* Solve a board and fill values, if solution exists
- gets pointer to cell map (maybe generate cell map inside function?) and to board
+ gets pointer to cell map (maybe generate cell map inside function?) and to board.
  this function is called from gen_board, which takes care of filling board with X random values
  in gen_board, a local copy of gptr->user is created  */
 int gurobi_ilp(int **board, game *gptr, GRBenv *env) {
@@ -118,8 +106,7 @@ int gurobi_ilp(int **board, game *gptr, GRBenv *env) {
  * randomly chooses X from them, and tries to fill them with valid values.
  * If succeeds, proceed to get_sol(board), else try to pick (other) X empty cells
  * and fill them
- * TODO - review logic: maybe the meaning of "pick X cells and fill..."
- * was to first pick the cells, and then try to find values for them */
+ */
 int** gen_board(game *gptr, int cells_to_fill, GRBenv *env) {
 	int **original_board, **solved_board;
 	int **empty_cells;
@@ -180,6 +167,7 @@ int** gen_board(game *gptr, int cells_to_fill, GRBenv *env) {
 	}
 }
 
+/* Boolean function that runs ILP and returns true if solution exists. */
 int board_has_sol(game *gptr, GRBenv *env) {
 	int **local;
 	int success;

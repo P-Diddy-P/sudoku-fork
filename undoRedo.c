@@ -75,6 +75,7 @@ int** get_changes_list(int **old_board, int **new_board, int sideLength,
 	return changes;
 }
 
+/* print changes from currentMove node */
 void print_changes(int **changes, int changes_num, int undo) {
 	int itr;
 
@@ -177,6 +178,10 @@ void append(node **current, int **changes, int *flags, int isFirst,
 	*current = newNode;
 }
 
+/* undo and redo functions. logic differs between them:
+ * - undo: first copy old values, print to user the changes (if functions
+ * was not called from reset), and move back pointer
+ * - redo: first move current pointer forward, then copy values from new. */
 int undo_aux(game *gptr, node **current, int *flags, int print_bool) {
 	int changes_exist;
 
@@ -212,8 +217,9 @@ int redo_aux(game *gptr, node **current, int *flags) {
 	return changes_exist;
 }
 
-/* allocate new nodeBoard from recently changed board
- * append new node with recent data */
+/* finds differences between the current board and oldBoard, storing
+ * said differences in a new linked list node.
+ * In order to conserve space, differences will be stored in 4-tuples */
 void commit_move(node **currentNode, game *gptr, int **old_board, int *flags,
 		int isFirst) {
 	int changes_num;
@@ -227,62 +233,4 @@ void commit_move(node **currentNode, game *gptr, int **old_board, int *flags,
 	changes = get_changes_list(old_board, gptr->user, gptr->sideLength,
 			&changes_num);
 	append(currentNode, changes, flags, isFirst, changes_num);
-}
-
-/*---------debugging-----------------------------------------------------*/
-/*TODO REMOVE- for debugging purposes only*/
-void print_current_node(node *Node, node *current) {
-
-	printf("\nPrinting node\n");
-
-	if (current == NULL) {
-		printf("ERROR - current IS NULL! \nEXITING...\n");
-		exit(0);
-	}
-
-	printf("%s", (Node->prev == NULL ? "First\n" : ""));
-	printf("%s", (Node->next == NULL ? "Last\n" : ""));
-	printf("%s", (Node == current ? "Current\n" : ""));
-
-	print_changes(Node->changes, Node->changesLen, 0);
-
-}
-
-/*TODO REMOVE- for debugging purposes only*/
-void print_history(node *currentNode) {
-	int k;
-	node *current;
-
-	printf("--------MOVES HISTORY-------\n");
-	if (currentNode->next == NULL && currentNode->prev == NULL) {
-		printf("Single node in list, printing..\n");
-		print_current_node(currentNode, currentNode);
-		return;
-	}
-
-	current = currentNode;
-	while (current->prev != NULL) {
-
-		if (k > 50) {
-			printf("More than 50 iterations, probably error, exiting...\n");
-			exit(0);
-		}
-
-		current = current->prev;
-		k++;
-	}
-	k = 1;
-	while (current != NULL) {
-		if (k > 50) {
-			printf("More than 50 iterations, probably ERROR...\n");
-			exit(0);
-		}
-		printf("\n---------Move %d----------\n", k);
-		print_current_node(current, currentNode);
-		current = current->next;
-		k++;
-	}
-
-	printf("--------END OF MOVES HISTORY-------\n");
-
 }
