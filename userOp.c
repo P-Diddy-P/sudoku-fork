@@ -84,16 +84,11 @@ int get_int_from_str(int *flags, char **strings, int arg) {
 
 	/* check if string is zero */
 	if (load_is_str_zero(strings[arg])) {
-		free(strings[arg]);
-		strings[arg] = NULL;
 		return 0;
 	}
 
 	/* try to convert to int with atoi */
 	get_int = atoi(strings[arg]);
-
-	free(strings[arg]);
-	strings[arg] = NULL;
 
 	/* if non zero, conversions successful, return int*/
 	if (get_int) {
@@ -193,6 +188,7 @@ void solve(game *gptr, int *flags, char **strings, node **currentMove) {
 
 	free_game_pointer(gptr);
 	assign_game_pointer(gptr, local_gptr);
+	free_game_pointer(local_gptr);
 	flags[MODE] = MODE_SOLVE;
 
 	if (is_game_over(gptr, flags)) {
@@ -225,6 +221,7 @@ void edit(game *gptr, int *flags, char **strings, node **currentMove) {
 	else {
 		load_board(local_gptr, flags, strings);
 		if (flags[INVALID_USER_COMMAND]) {
+			free_game_pointer(local_gptr);
 			return;
 		}
 
@@ -236,8 +233,9 @@ void edit(game *gptr, int *flags, char **strings, node **currentMove) {
 		}
 
 		free_game_pointer(gptr);
-		assign_game_pointer(gptr, local_gptr);/* TODO - discuss - do we want to change the structure
-		 so gptr will be a double pointer (**gptr), so the value of (*gptr) will be */
+		assign_game_pointer(gptr, local_gptr);
+		free_game_pointer(local_gptr);
+
 	}
 
 	/* set mode - BEFORE creating new list -
@@ -402,15 +400,10 @@ double get_float_from_str(int *flags, char **strings, int arg) {
 
 	/* check if string is zero */
 	if (load_is_str_zero(strings[arg])) {
-		free(strings[arg]);
-		strings[arg] = NULL;
 		return 0;
 	}
 
 	get_float = strtod(strings[arg], &end_address);
-
-	free(strings[arg]);
-	strings[arg]=NULL;
 
 	if (end_address != NULL) {
 		return get_float;
@@ -608,7 +601,6 @@ void hint(game *gptr, int *flags, char **strings, GRBenv *env) {
 	int **local_board;
 	int row, col, success;
 
-
 	col = get_int_from_str(flags, strings, ARG1);
 	row = get_int_from_str(flags, strings, ARG2);
 
@@ -628,11 +620,11 @@ void hint(game *gptr, int *flags, char **strings, GRBenv *env) {
 		printf("Error, board is erroneous, cannot give hint\n");
 		return;
 	}
-	if (gptr->flag[row-1][col-1] == FIXED) {
+	if (gptr->flag[row - 1][col - 1] == FIXED) {
 		printf("Error, cell is fixed, cannot give hint\n");
 		return;
 	}
-	if (gptr->user[row-1][col-1] != 0) {
+	if (gptr->user[row - 1][col - 1] != 0) {
 		printf("Error, cell is not zero, cannot give hint\n");
 		return;
 	}
@@ -764,21 +756,28 @@ void user_op(game *gptr, int *flags, char **strings, node **currentMove,
 		break;
 	case 3:
 		mark_errors(gptr, flags, strings, currentMove);
+		free(strings[ARG1]);
 		break;
 	case 4:
 		print_board(gptr, flags);
 		break;
 	case 5:
 		set(gptr, flags, strings, currentMove);
+		free(strings[ARG1]);
+		free(strings[ARG2]);
+		free(strings[ARG3]);
 		break;
 	case 6:
 		validate(gptr, env);
 		break;
 	case 7:
 		guess(gptr, flags, strings, currentMove, env);
+		free(strings[ARG1]);
 		break;
 	case 8:
 		generate(gptr, flags, strings, currentMove, env);
+		free(strings[ARG1]);
+		free(strings[ARG2]);
 		break;
 	case 9:
 		undo(gptr, currentMove, flags);
@@ -791,9 +790,13 @@ void user_op(game *gptr, int *flags, char **strings, node **currentMove,
 		break;
 	case 12:
 		hint(gptr, flags, strings, env);
+		free(strings[ARG1]);
+		free(strings[ARG2]);
 		break;
 	case 13:
 		guess_hint(gptr, flags, strings, env);
+		free(strings[ARG1]);
+		free(strings[ARG2]);
 		break;
 	case 14:
 		num_solutions(gptr);
@@ -809,7 +812,7 @@ void user_op(game *gptr, int *flags, char **strings, node **currentMove,
 		break;
 	}
 
-	if ((flags[EOF_EXIT])&&(flags[USER_COMMAND]!=EXIT)){
+	if ((flags[EOF_EXIT]) && (flags[USER_COMMAND] != EXIT)) {
 		Exit(gptr, currentMove, env);
 	}
 

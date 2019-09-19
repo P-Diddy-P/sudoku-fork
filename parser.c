@@ -202,7 +202,7 @@ void parse_command_path(int* flags, char* token, char *strings[],
 /* parsing commands with arguments and storing the resulting tokens in the
  * common strings array*/
 void parse_command_args(int* flags, char *strings[], char* token, int num_args) {
-	int k;
+	int k,j;
 	char *str;
 
 	/*no need to check for EOF (get_line responsibility) */
@@ -213,7 +213,9 @@ void parse_command_args(int* flags, char *strings[], char* token, int num_args) 
 		if (token == NULL) {
 			printf("Not enough arguments for command %s\n",
 					strings[USER_COMMAND_NAME]);
-
+			for(j=k-1; j>0; j--){
+				free(strings[j]);
+			}
 			parse_print_command_correct_args(flags);
 			flags[INVALID_USER_COMMAND] = 1;
 			return;
@@ -235,6 +237,9 @@ void parse_command_args(int* flags, char *strings[], char* token, int num_args) 
 		printf("Too many arguments for command %s \n",
 				strings[USER_COMMAND_NAME]);
 
+		for (j=1; j<=num_args; j++){
+			free(strings[j]);
+		}
 		parse_print_command_correct_args(flags);
 		flags[INVALID_USER_COMMAND] = 1;
 	}

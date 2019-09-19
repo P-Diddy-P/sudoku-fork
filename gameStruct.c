@@ -264,13 +264,7 @@ void init_board(game * gptr, int rows, int cols) {
 	gptr->rows = rows;
 	gptr->sideLength = rows * cols;
 
-	/*TODO remove in the end*/
-	if (gptr->sideLength > 2000) {
-		printf(
-				"WARNING - MATRIX DIMENSIONS ARE OVER %dX%d, TERMINATING WITH EXIT()...\n",
-				gptr->sideLength, gptr->sideLength);
-		exit(0);
-	}
+
 	/* changed to calloc from malloc */
 	gptr->user = calloc(gptr->sideLength, sizeof(int *));
 	memory_alloc_error();
