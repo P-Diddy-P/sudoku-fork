@@ -63,17 +63,6 @@ void randomize_cell_array(int** array, int length) {
 	}
 }
 
-/* Randomizing an array of of ints
- * Fisher-Yates */
-void randomize_array(int* array, int length) {
-	int i, j;
-
-	/* for */
-	for (i = length - 1; i > 0; i--) {
-		j = rand() % (i + 1);
-		swap_numbers(&(array[i]), &(array[j]));
-	}
-}
 
 /* Solve a board and fill values, if solution exists
  gets pointer to cell map (maybe generate cell map inside function?) and to board

@@ -809,6 +809,10 @@ void user_op(game *gptr, int *flags, char **strings, node **currentMove,
 		break;
 	}
 
+	if ((flags[EOF_EXIT])&&(flags[USER_COMMAND]!=EXIT)){
+		Exit(gptr, currentMove, env);
+	}
+
 }
 
 void print_art() {
