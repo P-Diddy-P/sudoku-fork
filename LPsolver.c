@@ -29,13 +29,14 @@ void reshape_solution(double *old_solution, double **new_solution, int num_rows,
 
 /* reduces the prob of each cell value to 0 if it is not over the threshold or the value is
  * invalid for the cell [row, col]. */
-int condanse_valids(game *gptr, int row, int col, double *original_prob, int **dest_index, double **dest_prob, double threshold) {
+int condanse_valids(game *gptr, int row, int col, double *original_prob,
+					int **dest_index, double **dest_prob, double threshold, int *zero_sum_flag) {
 
     int i, vi = 0, num_valids = 0;
     double sum_prob = 0.0;
 
     for (i=0; i<gptr->sideLength; i++) {
-        if (original_prob[i] < threshold || !check_valid_value(gptr, row, col, i+1)) {
+        if (original_prob[i] < threshold || !check_valid_value(gptr, row, col, i + 1)) {
             original_prob[i] = -1.0;
         } else {
             num_valids++;
@@ -53,14 +54,15 @@ int condanse_valids(game *gptr, int row, int col, double *original_prob, int **d
         }
     }
 
-    if (vi != num_valids) {
-        printf("assertion failed: condanse valids should have found %d nonzero probs, instead found %d.\n", num_valids, vi+1);
-        exit(1);
+    if (sum_prob == 0.0) {
+    	*zero_sum_flag = 1;
+    } else {
+    	*zero_sum_flag = 0;
     }
 
     for (vi=0; vi<num_valids; vi++) {
-        /* normalize valid probs sh=o that they'll sum up to 1.0 approx. */
-        (*dest_prob)[vi] = (*dest_prob)[vi] / sum_prob;
+    	/* normalize valid probs sh=o that they'll sum up to 1.0 approx. */
+    	(*dest_prob)[vi] = (*dest_prob)[vi] / sum_prob;
     }
 
     return num_valids;
@@ -92,20 +94,26 @@ int pick_random_value(int *value, double *prob, int length) {
             return store_index;
         }
     }
-
-    printf("error, random number %f is above maximal bound %f.\n", rand_num, intervals[length-1][1]);
-    exit(1);
 }
 
 int fill_cell(game *gptr, double *value_prob, int row, int col, double threshold) {
-    int *valid_value;
+    int *valid_value, zero_prob = 0;
     double *valid_prob;
-    int num_valids = condanse_valids(gptr, row, col, value_prob, &valid_value, &valid_prob, threshold);
+    int num_valids = condanse_valids(gptr, row, col, value_prob, &valid_value, &valid_prob, threshold, &zero_prob);
 
     if (num_valids == 0) {
+    	free(valid_value);
+    	free(valid_prob);
         return 0;
+    } else if (zero_prob == 1) {
+    	gptr->user[row][col] = valid_value[rand() % num_valids] + 1;
+    	free(valid_value);
+    	free(valid_prob);
+    	return 1;
     } else {
         gptr->user[row][col] = pick_random_value(valid_value, valid_prob, num_valids) + 1;
+    	free(valid_value);
+    	free(valid_prob);
         return 1;
     }
 }
