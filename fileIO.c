@@ -169,11 +169,13 @@ void load_next_number(FILE *fp, game *local_gptr, int *flags, int i, int j) {
 			& ((j != local_gptr->cols - 1) & (i != local_gptr->rows - 1))) {
 		printf("Error, invalid file format, not enough tokens provided\n");
 		flags[LOAD_IS_INVALID_FORMAT] = 1;
+		free(get_str);
 		return;
 	}
 
 	/* if EOF reached but board filled, return not on error*/
 	if (flags[LOAD_IS_EOF]) {
+		free(get_str);
 		return;
 	}
 
@@ -183,6 +185,7 @@ void load_next_number(FILE *fp, game *local_gptr, int *flags, int i, int j) {
 	if (!load_string_validity(get_str, str_len)) {
 		printf("Error, invalid token in file\n");
 		flags[LOAD_IS_INVALID_FORMAT] = 1;
+		free(get_str);
 		return;
 	}
 
@@ -196,15 +199,11 @@ void load_next_number(FILE *fp, game *local_gptr, int *flags, int i, int j) {
 	 * (to make up for "atoi" function bad behavior with the char '0',
 	 * where there's no difference between an error and the char '0') */
 	if (load_is_str_zero(get_str)) {
-		free(get_str);
 		get_int = 0;
-	}
-
-	/* token is valid number, turn it into an int and free memory*/
-	else {
+	}	else {
 		get_int = atoi(get_str);
-		free(get_str);
 	}
+	free(get_str);
 
 	/* if number is invalid for board, return error*/
 	if (!load_is_number_valid_for_board(local_gptr->sideLength, get_int)) {
@@ -227,7 +226,6 @@ void load_next_number(FILE *fp, game *local_gptr, int *flags, int i, int j) {
 	/* number is valid for board, write it into the local game user and flags*/
 	local_gptr->user[i][j] = get_int;
 	local_gptr->flag[i][j] = dot;
-
 }
 
 /* Checks if the two strings that were read are valid*/
@@ -412,6 +410,10 @@ void load_board(game *local_gptr, int *flags, char **strings) {
 
 	/* try to read dimensions from file, return false if failed*/
 	if (!load_get_dimensions(fp, local_gptr, flags)) {
+		if (fclose(fp) == EOF) {
+			printf("Error on closing file\n");
+			return;
+		}
 		return;
 	}
 
@@ -420,10 +422,16 @@ void load_board(game *local_gptr, int *flags, char **strings) {
 
 	/* load entries */
 	if (load_entries(local_gptr, fp, flags)) {
-
+		if (fclose(fp) == EOF) {
+			printf("Error on closing file\n");
+			return;
+		}
 		return;
 	}
-
+	if (fclose(fp) == EOF) {
+		printf("Error on closing file\n");
+		return;
+	}
 	flags[INVALID_USER_COMMAND] = 1;
 	return;
 
