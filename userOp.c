@@ -697,6 +697,7 @@ void Exit(game *gptr, node **currentMove, GRBenv *env) {
 	printf("Exiting game...\n");
 	terminate_all(*currentMove);
 	free_game_pointer(gptr);
+	free(gptr);
 	GRBfreeenv(env);
 
 }
