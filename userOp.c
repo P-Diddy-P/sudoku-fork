@@ -200,7 +200,6 @@ void edit(game *gptr, int *flags, char **strings, node **currentMove) {
 	else {
 		load_board(local_gptr, flags, strings);
 		if (flags[INVALID_USER_COMMAND]) {
-			free_game_pointer(local_gptr);
 			return;
 		}
 
@@ -349,7 +348,8 @@ void set(game *gptr, int *flags, char **strings, node **currentMove) {
 
 	print_board(gptr, flags);
 	commit_move(currentMove, gptr, old_board, flags, 0);
-	free_2d_array(old_board, gptr->sideLength);
+	free_2d_array(old_board,gptr->sideLength);
+
 }
 
 /*------------Validate-----------------*/
@@ -396,7 +396,6 @@ double get_float_from_str(int *flags, char **strings, int arg) {
 
 }
 
-/*TODO - */
 void guess(game *gptr, int *flags, char **strings, node **currentMove,
 		GRBenv *env) {
 	int **old_board;
@@ -416,7 +415,7 @@ void guess(game *gptr, int *flags, char **strings, node **currentMove,
 	}
 
 	commit_move(currentMove, gptr, old_board, flags, 0);
-	free_2d_array(old_board, gptr->sideLength);
+	free_2d_array(old_board,gptr->sideLength);
 	print_board(gptr, flags);
 }
 
@@ -508,6 +507,7 @@ void generate(game *gptr, int *flags, char **strings, node **currentMove,
 	clear_all_but_y(gptr, cells_to_leave);
 
 	commit_move(currentMove, gptr, old_board, flags, 0);
+	free_2d_array(old_board,gptr->sideLength);
 	print_board(gptr, flags);
 }
 
@@ -656,6 +656,7 @@ void num_solutions(game *gptr) {
 /* Using autocomplete module, fill all obvious cells  */
 void autofill(game *gptr, int *flags, node **currentMove) {
 	int **old_board;
+	int filled;
 
 	update_board_errors(gptr);
 	old_board = init_2d_array(gptr->sideLength);
@@ -667,15 +668,25 @@ void autofill(game *gptr, int *flags, node **currentMove) {
 		return;
 	}
 
-	auto_complete(gptr);
+	filled = auto_complete(gptr);
 	if (is_game_over(gptr, flags)) {
 		free_2d_array(old_board, gptr->sideLength);
 		return;
 	}
 
+	update_board_errors(gptr);
+
+	if (filled>0){
+		printf("%d cells were filled\n",filled);
+		print_board(gptr,flags);
+	}
+	else{
+		printf("No cells were filled\n");
+	}
+
 	commit_move(currentMove, gptr, old_board, flags, 0);
 	free_2d_array(old_board, gptr->sideLength);
-	update_board_errors(gptr);
+
 }
 
 /*------------Reset-----------------*/

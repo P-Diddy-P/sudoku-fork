@@ -291,10 +291,9 @@ void init_board(game * gptr, int rows, int cols) {
 	}
 
 	/* compound statement check for memory allocation errors */
-	/* TODO: refactor to error functions in the compound statement, reduce clutter */
 	{
 
-		if (errno) {/* TODO - errno could be set to non-zero value by a wide variety of errors, consider changing logic*/
+		if (errno) {
 			printf("Error during game memory allocation.\n");
 			exit(errno);
 		}

@@ -48,6 +48,7 @@ int main() {
 		parse_user(flags, strings);
 		user_op(gptr, flags, strings, &currentMove, env);
 
+
 		if (flags[EOF_EXIT]) {
 			break;
 		}
