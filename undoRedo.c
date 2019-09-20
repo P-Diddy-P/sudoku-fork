@@ -80,7 +80,7 @@ void print_changes(int **changes, int changes_num, int undo) {
 	int itr;
 
 	if (changes_num == 0) {
-		printf("No changes in board\n");
+		printf("No cells were changed\n");
 		return;
 	}
 
@@ -190,7 +190,7 @@ int undo_aux(game *gptr, node **current, int *flags, int print_bool) {
 		return 0;
 	}
 
-	copy_1d_array(((*current)->prev)->flagArray, flags, NUM_FLAGS);
+	copy_1d_array(flags,((*current)->prev)->flagArray, NUM_FLAGS);
 	changes_exist = copy_changes(gptr, *current, 1);
 
 	if (print_bool) {
@@ -210,7 +210,7 @@ int redo_aux(game *gptr, node **current, int *flags) {
 	}
 
 	*current = (*current)->next;
-	copy_1d_array((*current)->flagArray, flags, NUM_FLAGS);
+	copy_1d_array(flags,(*current)->flagArray, NUM_FLAGS);
 	changes_exist = copy_changes(gptr, *current, 0);
 	print_changes((*current)->changes, (*current)->changesLen, 0);
 
@@ -226,7 +226,7 @@ void commit_move(node **currentNode, game *gptr, int **old_board, int *flags,
 	int **changes = NULL;
 
 	if (old_board == NULL) {
-		append(currentNode, NULL, flags, 1, 0);
+		append(currentNode, NULL, flags, isFirst, 0);
 		return;
 	}
 
